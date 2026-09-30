@@ -1,0 +1,51 @@
+# GHOST SIGNAL — WHAT IF? Full Research Reference for LLMs
+
+## Mission Overview
+GHOST SIGNAL is an experimental biomedical AI reliability benchmark demonstrating how sensor artifacts, missingness, and timestamp staleness degrade machine-learning risk scores. The platform compares an all-feature baseline Random Forest against a Genetic Algorithm (GA) feature-selected Random Forest.
+
+## Target & Problem Definition
+- Target: is_critical (binary, 1 = critical, 0 = non-critical)
+- Critical phenotype patterns: Septic shock (tachycardia + hypotension + fever/hypothermia), Acute respiratory failure (desaturation + tachypnea), Hypertensive emergency, Cardiogenic bradycardia.
+- The Ghost Signal Pathology:
+  1. Silent Failure: When a decompensating patient experiences pulse oximetry probe detachment, downstream imputation of normal medians (98% SpO2) causes the model risk score to collapse below 0.50, hiding deterioration.
+  2. Spurious Alarm: Transient shivering/motion artifact spikes heart rate to 245 bpm, elevating baseline risk score above 0.50 and contributing to alarm fatigue.
+
+## Leakage-Free Preprocessing Pipeline
+1. Dataset split: 60% Train, 20% Validation, 20% Held-Out Test (stratified by critical label).
+2. Imputation values (training medians) and scaling bounds (RobustScaler) are fit strictly on the 60% Training split.
+3. No information from validation or held-out test splits leaks into preprocessing.
+
+## Genetic Algorithm Formulation
+- Binary chromosome c in {0, 1}^9 representing active features.
+- Multi-objective fitness function:
+  Fitness(c) = Val_AUROC(c) - 0.28 * Perturbation_Sensitivity(c) - 0.06 * (active_features / 9)
+- Perturbation Sensitivity is the mean absolute score change under 25% Gaussian noise injected into validation data.
+- The GA selects robust hemodynamic drivers while dropping volatile peripheral parameters.
+
+## API Endpoint Schemas
+- POST /api/simulator/what-if
+  Body:
+  {
+    "record_id": "SYN-REC-1001",
+    "vitals": {
+      "heart_rate": 135.0,
+      "spo2": 82.0,
+      "systolic_bp": 75.0,
+      "diastolic_bp": 45.0,
+      "respiratory_rate": 32.0,
+      "temperature": 39.2
+    },
+    "noise_std": 0.25,
+    "dropped_fields": ["spo2"],
+    "timestamp_stale_minutes": 180,
+    "custom_notes": "Adversarial shock evaluation"
+  }
+
+- GET /api/models/comparison?threshold=0.50
+  Returns AUROC, Recall/Sensitivity, False Negative Rate, False Negative Count, MASC, and ROC curves for both Baseline and GA models evaluated on untouched held-out test data.
+
+- GET /api/records?search=REC-1001&quality_status=CLEAN&limit=50
+  Returns paginated anonymized cohort records with baseline and GA scores.
+
+## Legal & Safety Notice
+Research demonstration only. Not for diagnosis, triage, treatment, or real-patient decisions. Default cohort marked SYNTHETIC DEMO DATA — NOT CLINICAL EVIDENCE. No clinical efficacy is claimed.

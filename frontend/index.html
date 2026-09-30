@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2306B6D4' stroke-width='2'><path d='M22 12h-4l-3 9L9 3l-3 9H2'/></svg>" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GHOST SIGNAL — WHAT IF? | Biomedical AI Reliability Research</title>
+    <meta name="description" content="Explore how vital-sign data quality, missing readings, stale timestamps, and sensor noise affect machine-learning risk scores. Compare Baseline Random Forest vs GA-selected feature models under adversarial telemetry stress." />
+    <meta name="keywords" content="biomedical AI, telemetry reliability, ghost signals, alarm fatigue, Random Forest, genetic algorithm, physiological monitoring, Optic Forge Hackathon" />
+    <meta property="og:title" content="GHOST SIGNAL — WHAT IF? | Biomedical AI Reliability Research" />
+    <meta property="og:description" content="Test the reliability of AI when patient data cannot be trusted. Interactive research platform evaluating telemetry noise resilience." />
+    <meta property="og:type" content="website" />
+    <!-- AI Agent discovery tags -->
+    <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM Context for AI Agents" />
+    <link rel="help" href="/docs" title="Interactive OpenAPI Documentation" />
+  </head>
+  <body class="bg-navy-950 text-slate-100 antialiased selection:bg-cyan-500/30 selection:text-cyan-200">
+    <div id="root">
+      <!-- Semantic static HTML visible to web crawlers and text-based AI agents (ChatGPT, Claude, Perplexity) before React mounts -->
+      <header style="padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.1); background: #070B14;">
+        <h1 style="color: #06B6D4; font-size: 28px; margin: 0;">GHOST SIGNAL — WHAT IF?</h1>
+        <p style="color: #94A3B8; font-size: 16px; margin: 6px 0 0 0;">
+          <strong>Test the reliability of AI when patient data cannot be trusted.</strong>
+        </p>
+        <p style="color: #F59E0B; font-size: 13px; margin: 8px 0 0 0;">
+          ⚠️ <em>Research demonstration only. Not for diagnosis, triage, treatment, or real-patient decisions. Default cohort marked SYNTHETIC DEMO DATA — NOT CLINICAL EVIDENCE.</em>
+        </p>
+      </header>
+
+      <main style="padding: 24px; max-width: 900px; margin: 0 auto; line-height: 1.6; color: #CBD5E1;">
+        <h2>Executive Research Summary</h2>
+        <p>
+          Continuous hospital telemetry streams (heart rate, SpO2, blood pressure, respiratory rate, and core temperature) feed clinical AI risk models. In real high-acuity environments, loose sensors, motion artifacts, ambient light interference, and stale edge buffers produce <strong>ghost signals</strong> that trigger false alarms or silently mask acute deterioration.
+        </p>
+
+        <h2>Core Platform Capabilities</h2>
+        <ul>
+          <li><strong>Data-Quality Monitor</strong>: Real-time detection of missing values, timestamp staleness (&gt;120m), and implausible readings using configurable research rules.</li>
+          <li><strong>WHAT IF Simulator</strong>: Injects controlled Gaussian noise (0–100%), simulates sensor dropouts (e.g. pulse ox probe detachment), and models timestamp drift to quantify model risk score migration.</li>
+          <li><strong>Model Comparison</strong>: Evaluates Baseline Random Forest (all eligible features) vs Genetic Algorithm (GA) feature-selection Random Forest on untouched held-out test records.</li>
+          <li><strong>Explainability & Attribution</strong>: Plain-language narratives explaining input perturbations without implying biological causation.</li>
+          <li><strong>SDG Alignment</strong>: Aligned with UN Sustainable Development Goals 3 (Target 3.8: Safe Digital Health) and 9 (Target 9.5: Resilient Infrastructure).</li>
+        </ul>
+
+        <h2>AI Agent & Machine-Readable Interfaces</h2>
+        <ul>
+          <li><strong>LLM Documentation</strong>: <a href="/llms.txt" style="color: #38BDF8;">/llms.txt</a> and <a href="/llms-full.txt" style="color: #38BDF8;">/llms-full.txt</a></li>
+          <li><strong>OpenAPI 3.1 JSON Specification</strong>: <a href="/openapi.json" style="color: #38BDF8;">/openapi.json</a></li>
+          <li><strong>Interactive API Swagger Docs</strong>: <a href="/docs" style="color: #38BDF8;">/docs</a></li>
+          <li><strong>Cohort Health Endpoint</strong>: <code>GET /api/health</code></li>
+          <li><strong>Cohort Summary Endpoint</strong>: <code>GET /api/dashboard/summary</code></li>
+          <li><strong>Run WHAT IF Simulation</strong>: <code>POST /api/simulator/what-if</code></li>
+          <li><strong>Model Benchmarks</strong>: <code>GET /api/models/comparison?threshold=0.50</code></li>
+        </ul>
+      </main>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

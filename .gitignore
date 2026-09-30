@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+
+# Tests & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment & OS
+.env
+.DS_Store
+*.log
+
+# Databases & local data
+backend/data/*.db

@@ -1,0 +1,38 @@
+# GHOST SIGNAL — WHAT IF?
+> Biomedical AI Reliability Research & Telemetry Simulation Platform
+> Optic Forge Hackathon
+
+Test the reliability of AI when patient data cannot be trusted.
+
+## About This System
+GHOST SIGNAL is an experimental research platform exploring how vital-sign data quality, missing readings, stale timestamps, and sensor noise affect machine learning risk scores. It compares a Baseline Random Forest (using all eligible features) against a Random Forest using Genetic Algorithm (GA)-selected features under adversarial telemetry perturbations.
+
+## Safety & Epistemic Boundaries
+- RESEARCH DEMONSTRATION ONLY: Not for diagnosis, triage, treatment, or real-patient decisions.
+- Risk scores are uncalibrated statistical model outputs and must not be described as validated clinical probabilities.
+- All default demo records are marked: SYNTHETIC DEMO DATA — NOT CLINICAL EVIDENCE.
+- Feature importance reflects statistical tree splits and does not establish biological or clinical causation.
+
+## Key APIs & Machine-Readable Interfaces
+- Base URL: /api
+- Interactive Documentation: /docs
+- OpenAPI 3.1 JSON Specification: /openapi.json
+- Health & Model Status: GET /api/health
+- Cohort Telemetry Summary: GET /api/dashboard/summary
+- Patient Records: GET /api/records?limit=50&quality_status=CLEAN
+- Data Quality Audit: GET /api/data-quality/report
+- Model Comparison: GET /api/models/comparison?threshold=0.50
+- WHAT IF Simulator: POST /api/simulator/what-if
+- Experiment History: GET /api/experiments
+- Experiment Export: GET /api/experiments/export-csv
+
+## Simulated Perturbation Modes
+1. Gaussian Sensor Noise: Adds noise N(0, sigma^2 * std) across physiological features.
+2. Sensor Dropout: Simulates probe detachment (SpO2, BP, etc.) forcing model imputation.
+3. Stale Timestamps: Simulates buffered telemetry drift (>120 minutes).
+4. Ghost Signal Detection: Identifies Silent Failures (false negatives) and Spurious Alarms (false positives).
+
+## UN Sustainable Development Goals
+- SDG 3 (Target 3.8): Minimizing hospital telemetry alarm fatigue and preventing silent patient decompensation.
+- SDG 9 (Target 9.5): Fault-tolerant AI infrastructure resilient to edge sensor degradation in low-resource clinics.
+- SDG 10 (Future Roadmap): Subgroup reliability auditing across demographic partitions.
