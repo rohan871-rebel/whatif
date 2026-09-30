@@ -1,6 +1,6 @@
 # GHOST SIGNAL — WHAT IF?
 ### Biomedical AI Reliability Research & Telemetry Simulation Platform
-**Built for the Optic Forge Hackathon**
+**Built for the OptiForge 2026 Hackathon**
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688.svg)](https://fastapi.tiangolo.com)
@@ -12,55 +12,75 @@
 
 ---
 
-## 1. Executive Summary & Problem Statement
+## 1. Research Objective & Problem Statement
 
-Modern intensive care units and high-acuity wards deploy continuous telemetry streams (heart rate, pulse oximetry, non-invasive blood pressure, respiratory rate, and core temperature) into machine learning early-warning algorithms. 
+**Core Research Objective**: To investigate how noisy, missing, outdated, or unreliable patient vital-sign data affects AI-based patient-risk predictions.
 
-However, real hospital telemetry is notoriously noisy:
-- **Loose Sensor Detachment**: Diaphoretic patients lose finger pulse oximeter contact; naive ML pipelines impute normal cohort medians (98% $\text{SpO}_2$), creating a **Silent Failure** where critical respiratory collapse is hidden from nurses.
-- **Motion Artifacts & Shivering**: Patient movement or shivering induces high-frequency impedance spikes (e.g., transient 245 bpm recordings), triggering **Spurious Alarms** that drive severe hospital alarm fatigue.
-- **Stale Telemetry Buffers**: Asynchronous edge buffers cache old readings without timestamp validation, computing risk scores on obsolete physiological states.
+Modern high-acuity wards and intensive care units deploy continuous telemetry streams—**heart rate**, **oxygen saturation ($\text{SpO}_2$)**, **blood pressure** (systolic and diastolic), **respiratory rate**, and **temperature**—into machine-learning early-warning algorithms. 
 
-**GHOST SIGNAL — WHAT IF?** is a full-stack biomedical AI reliability research lab. It provides clinicians, researchers, and hackathon judges with a sandboxed environment to inject controlled noise, dropouts, and timestamp drift, directly demonstrating how an all-feature baseline Random Forest fails and how a **Genetic Algorithm (GA) feature-selection mask** mitigates spurious volatility.
+However, real-world clinical telemetry is notoriously vulnerable to data corruption:
+- **Sensor Detachment & Missing Readings**: A diaphoretic patient loses finger pulse oximeter contact. Naive pipelines impute cohort medians (98% oxygen saturation), producing a **Silent Failure (False Negative)** where acute respiratory collapse is erroneously hidden from clinicians.
+- **Motion Artifacts & High-Frequency Noise**: Patient movement, shivering, or loose leads induce transient impedance spikes (e.g., false 240+ bpm recordings), triggering **Spurious Alarms (False Positives)** that exhaust clinical staff and drive severe hospital alarm fatigue.
+- **Outdated / Stale Telemetry Buffers**: Asynchronous edge buffers cache old readings without timestamp validation, computing risk scores on obsolete physiological states.
+
+**GHOST SIGNAL — WHAT IF?** provides researchers, clinicians, and evaluators with a controlled, sandboxed environment to inject Gaussian noise, simulate sensor dropouts, and drift timestamp staleness, directly quantifying how standard all-feature Random Forests degrade and demonstrating how **Genetic Algorithm (GA) feature-selection masks** dampen score volatility.
 
 ---
 
-## 2. Key Pages and System Features
+## 2. Core Declared Problem Concepts & System Architecture
 
-| Module | Core Functionality | Reliability Impact |
+The platform directly implements and validates the seven core declared problem concepts:
+
+| Declared Concept | Code Implementation | Reliability Role |
 | :--- | :--- | :--- |
-| **Landing Page** | Project mission, animated HTML5 ECG lead II waveform, and SDG mapping. | High-level research framing and problem motivation. |
-| **Dashboard** | Total cohort metrics, telemetry defect counts, vital sign distributions, and baseline vs GA score spectrums. | Real-time overview of cohort quality and model discrimination. |
-| **Record Explorer** | Anonymized record search, filtering by quality status/acuity, sorting, detailed physiological radar charts, and sample CSV download. | Complete visibility into individual patient telemetry streams without PHI leakage. |
-| **Data Quality Monitor** | Real-time detection of implausible ranges, pressure inversions ($\text{DBP} \ge \text{SBP}$), missingness, and stale buffers ($>120\text{m}$). Includes an interactive rule config editor. | Enforces configurable research rules (clearly separated from universal clinical standards). |
-| **WHAT IF Simulator** | Interactive vital sliders, Gaussian sensor noise injection ($\sigma \in [0, 100\%]$), sensor detachment dropout checkboxes, and timestamp staleness drift. | Quantifies score migration ($|\Delta\text{Score}|$) and alerts on **Silent Failures** or **Spurious Alarms**. |
-| **Model Comparison** | Rigorous evaluation of Baseline RF vs GA-selected RF on held-out test data (AUROC, Sensitivity/Recall, False Negative Rate, MASC under perturbation, and ROC curves). | Evaluates robustness tradeoffs across an interactive decision threshold ($\tau \in [0.1, 0.9]$). |
-| **Experiment History** | Persistent run audit log recording perturbations, baseline shift, GA shift, and ghost signal classification with one-click CSV export. | Full reproducibility and experiment tracking for research reports. |
-| **Explainability** | Plain-language feature attribution narratives detailing which inputs moved and why the GA model resisted noise. | Explicitly educates that statistical feature importance does not establish biological causation. |
-| **Methodology** | Mathematical formulation of the multi-objective GA fitness function, train/val/test splits, and preprocessing leakage guards. | Academic transparency for technical review. |
-| **SDG Alignment** | In-depth alignment with **SDG 3** (Good Health & Well-Being) and **SDG 9** (Industry, Innovation & Infrastructure), with a future roadmap for **SDG 10** (Subgroup Fairness). | Ethical and societal framing without unsubstantiated clinical impact claims. |
+| **1. Vital Signs Telemetry** | `heart_rate`, `spo2` / `oxygen_saturation`, `systolic_bp`, `diastolic_bp`, `respiratory_rate`, `temperature` | Raw physiological streams with clinical terminology aliases and derived hemodynamic indices (`shock_index`, `pulse_pressure`, `mean_arterial_bp`). |
+| **2. Data-Quality Warnings & Rules** | `DataQualityMonitor`, `RuleConfig`, boundary audits | Pre-inference screening detecting missing values, physiological impossibility, pressure inversions ($\text{DBP} \ge \text{SBP}$), and stale buffers ($>120\text{m}$). |
+| **3. Random Forest Risk Classification** | `RandomForestClassifier` (100 estimators, balanced) | Baseline early-warning risk scoring with class balancing on stratified splits. |
+| **4. Genetic Algorithm Feature Selection** | `GeneticAlgorithmFeatureSelector` | Multi-objective evolutionary search balancing validation AUROC, perturbation resilience (noise dampening), and parsimony. |
+| **5. Controlled What-If Simulations** | `WhatIfSimulator.simulate_experiment` | Sandboxed perturbation engine applying Gaussian noise ($\sigma \in [0, 1.0]$), probe dropouts, and staleness drift. |
+| **6. Baseline vs. GA Comparison** | `ModelComparisonResponse`, `evaluate_model` | Benchmarking on identical untouched held-out test records across AUROC, Brier score, and ROC curves. |
+| **7. Evaluation of Prediction Changes & False Negatives** | `prediction_change_magnitude`, `is_false_negative`, `is_false_positive` | Explicitly classifies Silent Failures (false negatives) and Spurious Alarms (false positives) under perturbation. |
 
 ---
 
-## 3. Technology Stack
+## 3. Explicit UN Sustainable Development Goal (SDG) Alignment
 
-- **Backend**: Python 3.10+ / FastAPI, Uvicorn, Pydantic v2
-- **Machine Learning**: scikit-learn (`RandomForestClassifier`), NumPy, pandas, SciPy
-- **Persistence**: SQLite (`ghost_signal.db`) for cohort persistence and experiment run tracking
-- **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, Lucide React, Recharts
-- **Testing**: Pytest, FastAPI TestClient, httpx
+This project aligns its technical contributions with the United Nations Sustainable Development Goals as a research framework.
+
+> [!IMPORTANT]
+> **SDG Alignment Framing**: Alignment to UN SDGs represents the project's **engineering design motivation and evaluation criteria**, NOT clinical certification or proof of real-world bedside outcomes. The system is an educational research demonstration.
+
+### A. SDG 3: Good Health and Well-Being
+*Target 3.d: Strengthen the capacity of all countries for early warning, risk reduction, and management of national and global health risks.*  
+*Target 3.8: Achieve access to quality essential healthcare services and safe, effective health technologies.*
+
+| Algorithmic Output | Metric / Field in Code | SDG 3 Alignment Rationale |
+| :--- | :--- | :--- |
+| **False Negative Rate ($\text{FNR}$)** | `false_negative_rate`, `is_false_negative` | Quantifies **Silent Failures** where corrupted signals mask critical decompensation. Reducing false negatives directly supports patient safety in early-warning systems. |
+| **Mean Absolute Score Change ($\text{MASC}$)** | `mean_absolute_score_change`, `prediction_change_magnitude` | Quantifies **Spurious Alarms (False Positives)** induced by sensor noise. Minimizing MASC addresses clinical alarm fatigue, preventing nurse burnout and missed alarms. |
+| **Pre-Inference Quality Audit** | `clean_count`, `warning_count`, `defect_count` | Prevents garbage-in, garbage-out failure modes by screening out physiologically implausible readings and stale buffers before model execution. |
+| **Brier Score Calibration** | `brier_score_loss` | Measures probability calibration, ensuring risk scores reflect statistical reliability rather than overconfident edge predictions. |
+
+### B. SDG 9: Industry, Innovation and Infrastructure
+*Target 9.5: Enhance scientific research and upgrade the technological capabilities of industrial sectors.*
+
+| Algorithmic Output | Metric / Field in Code | SDG 9 Alignment Rationale |
+| :--- | :--- | :--- |
+| **GA Noise Dampening Gain** | `robustness_gain_percent` | Demonstrates how multi-objective evolutionary computation can engineer noise-resilient AI architectures for resource-constrained edge medical hardware. |
+| **Feature Parsimony Mask** | `selected_features_count`, `feature_mask` | Reduces telemetry bandwidth and sensor dependency by identifying a robust minimal vital subset (`shock_index`, `respiratory_rate`). |
 
 ---
 
-## 4. Machine Learning & Genetic Algorithm Architecture
+## 4. Machine Learning & Preprocessing Methodology
 
-### A. Leakage-Free Preprocessing Pipeline
-To prevent optimistic bias and data leakage:
-1. Cohort records are partitioned into **60% Training**, **20% Validation**, and **20% Held-Out Test** (stratified by critical event status).
+### A. Strict Leakage-Free Preprocessing
+To prevent optimistic evaluation bias and data leakage:
+1. Cohort records are partitioned into **60% Training**, **20% Validation**, and **20% Held-Out Test** (stratified by `is_critical` status).
 2. Imputation medians and scaling parameters (`RobustScaler`) are **fitted strictly on the Training set**.
-3. Validation and held-out test splits are transformed using pre-fitted training statistics only.
+3. Target labels (`is_critical`) and identifier fields (`record_id`, `timestamp`) are strictly excluded from feature inputs.
+4. Validation and held-out test splits are transformed using pre-fitted training statistics only.
 
-### B. Genetic Algorithm Binary Feature Selection
+### B. Genetic Algorithm Multi-Objective Fitness
 A binary chromosome $\mathbf{c} \in \{0, 1\}^D$ encodes active features across the 9 primary and hemodynamic derived dimensions (`heart_rate`, `spo2`, `systolic_bp`, `diastolic_bp`, `respiratory_rate`, `temperature`, `shock_index`, `pulse_pressure`, `mean_arterial_bp`).
 
 The multi-objective fitness function optimized over successive generations is:
@@ -74,19 +94,48 @@ Where:
 
 ---
 
-## 5. Quickstart Guide
+## 5. Security & Secret Hygiene
+
+The repository enforces strict environment and upload guardrails:
+
+- **Environment Configuration**: Documented via [`.env.example`](.env.example). Never commit `.env` or production credentials.
+- **Configurable CORS**: `ALLOWED_ORIGINS` defaults to safe comma-separated domains or wildcard for local development.
+- **CSV Upload Guardrails**:
+  - File size restricted to `MAX_UPLOAD_SIZE_MB=5` (HTTP 413 on oversized payloads).
+  - Row counts bounded between `MIN_CSV_ROWS=20` and `MAX_CSV_ROWS=5000` (HTTP 422 on invalid length).
+  - Mandatory schema validation: `record_id`, `timestamp`, `is_critical` with both binary classes present.
+  - Safe in-memory buffering without disk persistence of raw uploaded files.
+
+---
+
+## 6. Installation & Local Setup
+
+### Environment Variables
+Copy the template configuration file:
+```bash
+cp .env.example .env
+```
+
+| Variable | Default | Purpose |
+| :--- | :--- | :--- |
+| `HOST` | `0.0.0.0` | Server host binding |
+| `PORT` | `8000` | Server port binding |
+| `DEBUG` | `false` | Enable debug mode |
+| `ALLOWED_ORIGINS` | `*` | Comma-separated CORS allowed origins |
+| `MAX_UPLOAD_SIZE_MB` | `5` | Maximum CSV upload file size |
+| `MIN_CSV_ROWS` | `20` | Minimum dataset rows for cross-validation |
+| `MAX_CSV_ROWS` | `5000` | Maximum dataset rows for demo server |
+| `RANDOM_SEED` | `42` | Deterministic seed for reproducible ML splits |
 
 ### Option 1: One-Click Startup (macOS & Linux)
-From the repository root, simply execute:
+From the repository root:
 ```bash
 ./start.sh
 ```
-This automatically installs dependencies, initializes the synthetic cohort, trains both models, and starts:
+This automatically verifies dependencies, initializes the synthetic cohort, trains both models, and starts:
 - **Research Dashboard**: [http://localhost:5173](http://localhost:5173)
 - **FastAPI Backend**: [http://localhost:8000](http://localhost:8000)
 - **Interactive Swagger Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
-
----
 
 ### Option 2: Manual Step-by-Step Setup
 
@@ -104,79 +153,59 @@ cd frontend
 npm install
 npm run dev
 ```
-Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ---
 
-## 6. Running Automated Tests
+## 7. Running Automated Tests
 
-Run the test suite to verify data quality rules, ML leakage prevention, and API contracts:
+Run the complete test suite across data quality rules, ML leakage prevention, What-If simulation, and API endpoints:
 ```bash
-export PYTHONPATH="backend"
-pytest backend/tests -v
+PYTHONPATH=backend python3 -m pytest backend/tests -v
 ```
 
-Expected result:
+### Verified Test Suite (35 Tests Passing)
 ```
 backend/tests/test_api.py::test_api_health PASSED
 backend/tests/test_api.py::test_api_dashboard_summary PASSED
 backend/tests/test_api.py::test_api_records_list PASSED
+backend/tests/test_api.py::test_api_record_detail PASSED
+backend/tests/test_api.py::test_api_record_detail_404 PASSED
 backend/tests/test_api.py::test_api_model_comparison PASSED
 backend/tests/test_api.py::test_api_what_if_simulator PASSED
+backend/tests/test_api.py::test_api_what_if_simulator_invalid_inputs PASSED
+backend/tests/test_api.py::test_api_sample_csv_download PASSED
+backend/tests/test_api.py::test_api_csv_upload_valid PASSED
+backend/tests/test_api.py::test_api_csv_upload_reject_non_csv PASSED
+backend/tests/test_api.py::test_api_csv_upload_reject_missing_mandatory PASSED
+backend/tests/test_api.py::test_api_csv_upload_reject_too_few_rows PASSED
+backend/tests/test_api.py::test_api_csv_upload_reject_single_class PASSED
+backend/tests/test_api.py::test_api_data_quality_report PASSED
+backend/tests/test_api.py::test_api_data_quality_rules_update PASSED
 backend/tests/test_api.py::test_api_experiments_and_csv_export PASSED
+backend/tests/test_api.py::test_api_ai_discovery_endpoints PASSED
 backend/tests/test_data_quality.py::test_data_quality_clean_record PASSED
 backend/tests/test_data_quality.py::test_data_quality_missing_vital PASSED
 backend/tests/test_data_quality.py::test_data_quality_implausible_reading PASSED
 backend/tests/test_data_quality.py::test_data_quality_pressure_inversion PASSED
+backend/tests/test_data_quality.py::test_data_quality_stale_timestamp PASSED
+backend/tests/test_data_quality.py::test_data_quality_oxygen_saturation_synonym PASSED
+backend/tests/test_data_quality.py::test_data_quality_rule_enable_disable PASSED
 backend/tests/test_ml_pipeline.py::test_preprocessor_no_leakage PASSED
+backend/tests/test_ml_pipeline.py::test_no_target_leakage_in_features PASSED
+backend/tests/test_ml_pipeline.py::test_preprocessor_all_nans_fallback PASSED
+backend/tests/test_ml_pipeline.py::test_evaluation_consistency_and_same_test_records PASSED
 backend/tests/test_ml_pipeline.py::test_ml_pipeline_train_and_evaluate PASSED
 backend/tests/test_ml_pipeline.py::test_predict_single_vitals PASSED
-================== 13 passed in 100% ==================
+backend/tests/test_whatif_simulator.py::test_whatif_simulator_clean_baseline PASSED
+backend/tests/test_whatif_simulator.py::test_whatif_simulator_silent_failure_false_negative PASSED
+backend/tests/test_whatif_simulator.py::test_whatif_simulator_spurious_alarm_noise_spike PASSED
+backend/tests/test_whatif_simulator.py::test_whatif_simulator_reproducible_output PASSED
+================== 35 passed, 1 warning ==================
 ```
 
 ---
 
-## 7. Dataset Schema & CSV Upload Specification
-
-Uploaded datasets must be de-identified and formatted as `.csv`.
-
-| Column | Type | Required | Description | Plausible Range |
-| :--- | :--- | :--- | :--- | :--- |
-| `record_id` | String | Yes | Anonymized record ID (e.g., `REC-1001`) | Unique |
-| `timestamp` | String | Yes | ISO format (`YYYY-MM-DD HH:MM:SS`) | Past telemetry |
-| `heart_rate` | Float | Optional | Heart rate in beats per minute | 30.0 – 240.0 bpm |
-| `spo2` | Float | Optional | Pulse oximetry saturation percentage | 50.0 – 100.0 % |
-| `systolic_bp` | Float | Optional | Systolic arterial pressure | 40.0 – 260.0 mmHg |
-| `diastolic_bp` | Float | Optional | Diastolic arterial pressure | 25.0 – 160.0 mmHg |
-| `respiratory_rate` | Float | Optional | Breaths per minute | 4.0 – 60.0 bpm |
-| `temperature` | Float | Optional | Core body temperature | 32.0 – 43.0 °C |
-| `is_critical` | Integer | Yes | Binary critical event indicator | 0 (Stable) or 1 (Critical) |
-
-A template file can be downloaded directly from the UI or via `GET /api/records/sample-csv`.
-
----
-
-## 8. API Endpoints
-
-- `GET /api/health`: Health status, database state, model status, and disclaimer.
-- `GET /api/dashboard/summary`: Cohort summary metrics, vital distributions, and risk histograms.
-- `GET /api/records`: Paginated record query with search, status filters, and sorting.
-- `GET /api/records/{record_id}`: Single record detail and individual audit warnings.
-- `POST /api/records/reset-synthetic`: Regenerates the synthetic cohort and retrains models.
-- `POST /api/records/upload-csv`: Validates and ingests authorized de-identified CSV cohorts.
-- `GET /api/records/sample-csv`: Downloads template CSV.
-- `GET /api/data-quality/report`: Comprehensive cohort data-quality audit report.
-- `GET /api/data-quality/rules`: Retrieves active configurable research rules.
-- `PUT /api/data-quality/rules`: Modifies rule plausibility bounds and staleness limits.
-- `GET /api/models/comparison`: Baseline RF vs GA-selected RF metrics on held-out test data.
-- `POST /api/models/retrain`: Retrains models on current database records.
-- `POST /api/simulator/what-if`: Executes controlled perturbation simulation and logs to history.
-- `GET /api/experiments`: Retrieves past experiment run logs.
-- `GET /api/experiments/export-csv`: Exports experiment audit logs to CSV.
-
----
-
-## 9. Epistemic & Ethical Boundaries
+## 8. Epistemic & Ethical Boundaries
 
 1. **Experimental Prototype**: This software is built for educational demonstration and reliability research. It has not undergone clinical certification and must never be used for triage or bedside decision-making.
 2. **Uncalibrated Model Scores**: Model outputs represent tree-split class distributions from Random Forests, not calibrated biological probabilities.
@@ -185,15 +214,10 @@ A template file can be downloaded directly from the UI or via `GET /api/records/
 
 ---
 
-## 10. Optic Forge Hackathon Jury Checklist
+## 9. Live Deployments
 
-- [x] **Complete, Functional Full-Stack Web App**: Live React/TS/Tailwind frontend communicating with FastAPI/scikit-learn backend.
-- [x] **Apple-Inspired Dark Aesthetic**: Deep navy palette (`#070B14`, `#0B1120`), cyan/purple accents, soft glow borders, rounded cards, clean typography.
-- [x] **Live Animated Waveform**: Dynamic Lead II telemetry visualizer reflecting real-time noise injection and staleness.
-- [x] **WHAT IF Simulator**: Live vital sliders, Gaussian noise, sensor dropout toggles, stale timestamp simulation, and ghost signal classification.
-- [x] **Model Comparison**: Baseline RF vs GA-selected RF evaluated on held-out test data with decision threshold tuning and ROC curves.
-- [x] **Data Quality Monitor**: Real-time detection of missingness, staleness, and implausibility with configurable research rules.
-- [x] **Persistence & CSV Export**: SQLite database storing records and experiment runs with instant CSV export.
-- [x] **Offline Mock-Data Mode**: Seamless fallback mode if backend is disconnected, clearly documenting demo mode without pretending mock data is trained.
-- [x] **100% Automated Test Suite Passing**: 13/13 tests verifying data quality, ML leakage prevention, and API endpoints.
-- [x] **Comprehensive SDG Alignment**: Detailed mapping to SDG 3 and SDG 9, with SDG 10 framed strictly as a future research roadmap.
+- **Live Web Application (Vercel)**: [`https://frontend-lemon-six-43.vercel.app`](https://frontend-lemon-six-43.vercel.app)
+- **Live Interactive Demo Showcase**: [`https://frontend-lemon-six-43.vercel.app/demo.html`](https://frontend-lemon-six-43.vercel.app/demo.html)
+- **Render Production Service**: [`https://whatif-kche.onrender.com`](https://whatif-kche.onrender.com)
+- **GitHub Repository**: [`https://github.com/rohan871-rebel/whatif`](https://github.com/rohan871-rebel/whatif)
+- **Google Colab Notebook**: [`notebooks/ghost_signal_experiment.ipynb`](notebooks/ghost_signal_experiment.ipynb)

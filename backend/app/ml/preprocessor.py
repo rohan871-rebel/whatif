@@ -41,7 +41,13 @@ class VitalPreprocessor:
         """Computes derived hemodynamics safely with division-by-zero protection."""
         df = df.copy()
         
-        # Base vital guarantees
+        # Base vital guarantees & clinical terminology aliasing (oxygen_saturation <-> spo2)
+        if "oxygen_saturation" in df.columns:
+            if "spo2" not in df.columns:
+                df["spo2"] = df["oxygen_saturation"]
+            else:
+                df["spo2"] = df["spo2"].fillna(df["oxygen_saturation"])
+
         for col in BASE_VITAL_FEATURES:
             if col not in df.columns:
                 df[col] = np.nan

@@ -3,6 +3,7 @@ export interface VitalRecord {
   timestamp: string;
   heart_rate: number | null;
   spo2: number | null;
+  oxygen_saturation?: number | null;
   systolic_bp: number | null;
   diastolic_bp: number | null;
   respiratory_rate: number | null;
@@ -75,6 +76,10 @@ export interface WhatIfResponse {
   ga_risk_perturbed: number;
   delta_baseline: number;
   delta_ga: number;
+  prediction_change_magnitude?: number;
+  is_false_negative?: boolean;
+  is_false_positive?: boolean;
+  false_negative_risk_delta?: number | null;
   ghost_signal_detected: boolean;
   ghost_signal_type: 'SILENT_FAILURE' | 'SPURIOUS_ALARM' | 'VOLATILITY_DRIFT' | null;
   ghost_signal_severity: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH';

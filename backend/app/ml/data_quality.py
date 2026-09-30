@@ -108,6 +108,11 @@ class DataQualityMonitor:
         rec_id = str(record.get("record_id", "UNKNOWN"))
         ref_time = reference_time or datetime.now(timezone.utc)
 
+        # Handle clinical terminology alias (oxygen_saturation <-> spo2)
+        if record.get("spo2") is None and record.get("oxygen_saturation") is not None:
+            record = dict(record)
+            record["spo2"] = record["oxygen_saturation"]
+
         # 1. Missingness checks
         vital_fields = ["heart_rate", "spo2", "systolic_bp", "diastolic_bp", "respiratory_rate", "temperature"]
         for field in vital_fields:

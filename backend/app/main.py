@@ -12,7 +12,7 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 
-from app.config import RESEARCH_DISCLAIMER
+from app.config import RESEARCH_DISCLAIMER, ALLOWED_ORIGINS
 from app.storage.db import Database
 from app.ml.synthetic_data import generate_synthetic_cohort
 from app.ml.models import MLPipeline
@@ -107,7 +107,7 @@ app = FastAPI(
 # Enable CORS for frontend development and production
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

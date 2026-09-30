@@ -41,13 +41,22 @@ export const SDGPage: React.FC = () => {
           </div>
 
           <div className="space-y-2 text-xs text-slate-300 leading-relaxed">
-            <div className="font-semibold text-white">Target 3.8: Safe, Effective, and Quality Digital Health Tools</div>
+            <div className="font-semibold text-white">Target 3.8 & 3.d: Safe Early Warning & Digital Health Reliability</div>
             <p>
               Telemetry alarm fatigue is one of the leading safety hazards in acute care hospitals worldwide. Clinicians are exposed to hundreds of nuisance alerts per shift, leading to desensitization and missed true decompensation events.
             </p>
             <p>
               By quantifying how sensor noise pushes all-feature models into false-alarm cascades and demonstrating how Genetic Algorithm feature masks dampen spurious shifts, GHOST SIGNAL directly advances research into alarm fatigue reduction.
             </p>
+
+            <div className="pt-2 border-t border-emerald-500/20">
+              <div className="text-[11px] font-mono text-emerald-400 font-semibold mb-1">Algorithmic Output Mapping:</div>
+              <ul className="space-y-1 text-[11px] text-slate-300">
+                <li>• <strong className="text-white">False Negative Rate (FNR):</strong> Evaluates Silent Failures where missing vitals mask acute patient deterioration.</li>
+                <li>• <strong className="text-white">Mean Absolute Score Change (MASC):</strong> Quantifies Spurious Alarms induced by sensor noise spikes.</li>
+                <li>• <strong className="text-white">Pre-Inference Data Quality Flags:</strong> Audits vital signs for physiological bounds and stale buffers.</li>
+              </ul>
+            </div>
           </div>
         </div>
 

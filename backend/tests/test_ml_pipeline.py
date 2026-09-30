@@ -1,11 +1,13 @@
 """
-Unit tests for Machine Learning Pipeline, Preprocessor, and GA Feature Selection.
+Unit tests for Machine Learning Pipeline, Preprocessor, GA Feature Selection,
+and evaluation consistency without data leakage.
 """
 
 import numpy as np
 import pandas as pd
+import pytest
 from app.ml.synthetic_data import generate_synthetic_cohort
-from app.ml.preprocessor import VitalPreprocessor
+from app.ml.preprocessor import VitalPreprocessor, ALL_DERIVED_FEATURES
 from app.ml.models import MLPipeline, GeneticAlgorithmFeatureSelector
 
 
@@ -27,8 +29,50 @@ def test_preprocessor_no_leakage():
     assert not np.isnan(transformed_test).any()
 
 
+def test_no_target_leakage_in_features():
+    pipeline = MLPipeline(random_seed=42)
+    assert "is_critical" not in pipeline.all_feature_names
+    assert "record_id" not in pipeline.all_feature_names
+    assert "timestamp" not in pipeline.all_feature_names
+    
+    preprocessor = VitalPreprocessor()
+    assert "is_critical" not in preprocessor.feature_names
+
+
+def test_preprocessor_all_nans_fallback():
+    # Verify that an entirely empty dataframe falls back cleanly to defaults without crashing
+    preprocessor = VitalPreprocessor(include_derived=True)
+    empty_df = pd.DataFrame([{"record_id": "EMPTY-1"}])
+    preprocessor.fit(empty_df)
+    assert preprocessor.is_fitted
+    
+    transformed = preprocessor.transform(empty_df)
+    assert transformed.shape == (1, len(ALL_DERIVED_FEATURES))
+    assert not np.isnan(transformed).any()
+
+
+def test_evaluation_consistency_and_same_test_records():
+    df = generate_synthetic_cohort(n_samples=70, random_seed=99)
+    pipeline = MLPipeline(random_seed=99)
+    pipeline.train_pipeline(df)
+    
+    assert pipeline.X_test is not None
+    assert pipeline.y_test is not None
+    assert pipeline.X_test_perturbed is not None
+    assert pipeline.X_test.shape == pipeline.X_test_perturbed.shape
+    
+    # Both baseline and GA must be evaluated on the exact same test records
+    base_eval = pipeline.evaluate_model(is_ga=False, threshold=0.50)
+    ga_eval = pipeline.evaluate_model(is_ga=True, threshold=0.50)
+    
+    assert base_eval["critical_cases_count"] == ga_eval["critical_cases_count"]
+    total_base = sum(base_eval["confusion_matrix"].values())
+    total_ga = sum(ga_eval["confusion_matrix"].values())
+    assert total_base == total_ga == len(pipeline.y_test)
+
+
 def test_ml_pipeline_train_and_evaluate():
-    df = generate_synthetic_cohort(n_samples=100, random_seed=42)
+    df = generate_synthetic_cohort(n_samples=70, random_seed=42)
     pipeline = MLPipeline(random_seed=42)
     split_info = pipeline.train_pipeline(df)
     
@@ -51,7 +95,7 @@ def test_ml_pipeline_train_and_evaluate():
 
 
 def test_predict_single_vitals():
-    df = generate_synthetic_cohort(n_samples=80, random_seed=123)
+    df = generate_synthetic_cohort(n_samples=60, random_seed=123)
     pipeline = MLPipeline(random_seed=123)
     pipeline.train_pipeline(df)
 
@@ -66,5 +110,4 @@ def test_predict_single_vitals():
     b_risk, ga_risk = pipeline.predict_vitals(vitals_critical)
     assert 0.0 <= b_risk <= 1.0
     assert 0.0 <= ga_risk <= 1.0
-    # Patient in septic shock should have high predicted risk
     assert b_risk > 0.50

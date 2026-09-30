@@ -48,10 +48,10 @@ export const GhostSignalAlert: React.FC<GhostSignalAlertProps> = ({
           <div className="flex items-center gap-2">
             <span className="font-semibold tracking-tight text-sm uppercase">
               {isSilentFailure
-                ? 'CRITICAL GHOST SIGNAL: SILENT FAILURE DETECTED'
+                ? 'CRITICAL GHOST SIGNAL: SILENT FAILURE (FALSE NEGATIVE)'
                 : isSpuriousAlarm
                 ? 'GHOST SIGNAL DETECTED: SPURIOUS ALARM (FALSE POSITIVE)'
-                : 'HIGH VOLATILITY DRIFT DETECTED'}
+                : 'HIGH VOLATILITY PREDICTION CHANGE DETECTED'}
             </span>
             <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/40 border border-current">
               SEVERITY: {severity}

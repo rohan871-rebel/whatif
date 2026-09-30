@@ -250,14 +250,15 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({ initialRecord }) =
                 />
               </div>
 
-              {/* SpO2 */}
+              {/* SpO2 / Oxygen Saturation */}
               <div>
                 <label className="flex items-center justify-between text-xs text-slate-300 mb-1">
-                  <span>SpO2 Oxygen</span>
+                  <span>Oxygen Saturation (SpO₂)</span>
                   <span className="font-mono text-cyan-400">{vitals.spo2} %</span>
                 </label>
                 <input
                   type="number"
+                  aria-label="Oxygen Saturation (SpO2) percentage"
                   value={vitals.spo2}
                   onChange={(e) => setVitals({ ...vitals, spo2: e.target.value === '' ? '' : Number(e.target.value) })}
                   className="w-full px-3 py-1.5 rounded-lg bg-navy-900 border border-white/10 text-xs font-mono text-white focus:outline-none focus:border-cyan-500"
@@ -342,6 +343,10 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({ initialRecord }) =
               </div>
               <input
                 type="range"
+                aria-label="Sensor Gaussian Noise Magnitude (σ)"
+                aria-valuemin={0}
+                aria-valuemax={1}
+                aria-valuenow={noiseStd}
                 min="0"
                 max="1"
                 step="0.05"
@@ -389,6 +394,10 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({ initialRecord }) =
               </div>
               <input
                 type="range"
+                aria-label="Timestamp Staleness Drift in minutes"
+                aria-valuemin={0}
+                aria-valuemax={1440}
+                aria-valuenow={staleMinutes}
                 min="0"
                 max="1440"
                 step="30"

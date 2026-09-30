@@ -91,16 +91,24 @@ class WhatIfSimulator:
         ghost_signal_type: Optional[str] = None
         ghost_severity = "NONE"
 
-        # Case A: Silent Failure (Original high-risk patient drops below threshold due to sensor dropout)
+        prediction_change_magnitude = round(abs(delta_baseline), 4)
+        is_false_negative = False
+        is_false_positive = False
+        false_negative_risk_delta: Optional[float] = None
+
+        # Case A: Silent Failure (Original high-risk patient drops below threshold due to sensor dropout - False Negative)
         if orig_base_risk >= decision_threshold and pert_base_risk < decision_threshold:
             ghost_signal_detected = True
             ghost_signal_type = "SILENT_FAILURE"
             ghost_severity = "HIGH"
-        # Case B: Spurious Alarm (Original low-risk patient crosses threshold into high risk due to noise)
+            is_false_negative = True
+            false_negative_risk_delta = delta_baseline
+        # Case B: Spurious Alarm (Original low-risk patient crosses threshold into high risk due to noise - False Positive)
         elif orig_base_risk < decision_threshold and pert_base_risk >= decision_threshold:
             ghost_signal_detected = True
             ghost_signal_type = "SPURIOUS_ALARM"
             ghost_severity = "HIGH"
+            is_false_positive = True
         # Case C: High score volatility without crossing threshold
         elif abs(delta_baseline) >= 0.20:
             ghost_signal_detected = True
@@ -166,6 +174,10 @@ class WhatIfSimulator:
             ga_risk_perturbed=pert_ga_risk,
             delta_baseline=delta_baseline,
             delta_ga=delta_ga,
+            prediction_change_magnitude=prediction_change_magnitude,
+            is_false_negative=is_false_negative,
+            is_false_positive=is_false_positive,
+            false_negative_risk_delta=false_negative_risk_delta,
             ghost_signal_detected=ghost_signal_detected,
             ghost_signal_type=ghost_signal_type,
             ghost_signal_severity=ghost_severity,

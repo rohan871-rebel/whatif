@@ -3,19 +3,30 @@ Pydantic schemas for GHOST SIGNAL — WHAT IF?
 """
 
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class VitalRecordBase(BaseModel):
     record_id: str
     timestamp: str
     heart_rate: Optional[float] = Field(None, description="Heart rate in bpm")
-    spo2: Optional[float] = Field(None, description="Oxygen saturation in %")
+    spo2: Optional[float] = Field(None, description="Oxygen saturation in % (SpO2)")
+    oxygen_saturation: Optional[float] = Field(None, description="Oxygen saturation in % (clinical semantic equivalent to SpO2)")
     systolic_bp: Optional[float] = Field(None, description="Systolic blood pressure in mmHg")
     diastolic_bp: Optional[float] = Field(None, description="Diastolic blood pressure in mmHg")
     respiratory_rate: Optional[float] = Field(None, description="Respiratory rate in bpm")
     temperature: Optional[float] = Field(None, description="Core body temperature in Celsius")
     is_critical: int = Field(0, description="1 if critical event, 0 if non-critical")
+
+    @model_validator(mode="before")
+    @classmethod
+    def sync_oxygen_saturation(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if data.get("oxygen_saturation") is not None and data.get("spo2") is None:
+                data["spo2"] = data["oxygen_saturation"]
+            elif data.get("spo2") is not None and data.get("oxygen_saturation") is None:
+                data["oxygen_saturation"] = data["spo2"]
+        return data
 
 
 class VitalRecord(VitalRecordBase):
@@ -78,6 +89,10 @@ class WhatIfResponse(BaseModel):
     ga_risk_perturbed: float
     delta_baseline: float
     delta_ga: float
+    prediction_change_magnitude: float = Field(0.0, description="Absolute risk score shift |baseline_risk_perturbed - baseline_risk_original|")
+    is_false_negative: bool = Field(False, description="True if perturbation induced a Silent Failure (critical risk masked below decision threshold)")
+    is_false_positive: bool = Field(False, description="True if perturbation induced a Spurious Alarm (stable patient flagged critical)")
+    false_negative_risk_delta: Optional[float] = Field(None, description="Quantified risk suppression delta if false negative occurs")
     ghost_signal_detected: bool
     ghost_signal_type: Optional[str] = None  # None, "SPURIOUS_ALARM" (false positive), "SILENT_FAILURE" (false negative)
     ghost_signal_severity: str  # NONE, LOW, MEDIUM, HIGH
