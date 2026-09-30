@@ -141,6 +141,15 @@ df_cohort.head()
 def add_derived_features(df: pd.DataFrame) -> pd.DataFrame:
     df_feat = df.copy()
     
+    # Clinical alias synchronization: oxygen_saturation <-> spo2
+    if "oxygen_saturation" in df_feat.columns and "spo2" not in df_feat.columns:
+        df_feat["spo2"] = df_feat["oxygen_saturation"]
+    elif "spo2" in df_feat.columns and "oxygen_saturation" not in df_feat.columns:
+        df_feat["oxygen_saturation"] = df_feat["spo2"]
+    elif "oxygen_saturation" in df_feat.columns and "spo2" in df_feat.columns:
+        df_feat["spo2"] = df_feat["spo2"].fillna(df_feat["oxygen_saturation"])
+        df_feat["oxygen_saturation"] = df_feat["oxygen_saturation"].fillna(df_feat["spo2"])
+    
     # Mean Arterial Pressure (MAP) = DBP + (SBP - DBP) / 3
     df_feat["mean_arterial_pressure"] = np.round(
         df_feat["diastolic_bp"] + (df_feat["systolic_bp"] - df_feat["diastolic_bp"]) / 3.0, 2
@@ -374,7 +383,7 @@ if HAS_MATPLOTLIB:
 
 # %%
 def run_whatif_experiment(
-    vitals: Dict[str, float],
+    vitals: Dict[str, Any],
     noise_sigma: float = 0.0,
     dropped_features: List[str] = None,
     staleness_minutes: int = 0
@@ -382,15 +391,29 @@ def run_whatif_experiment(
     dropped_features = dropped_features or []
     vitals_pert = dict(vitals)
     
+    # Clinical alias synchronization: oxygen_saturation <-> spo2
+    if "oxygen_saturation" in vitals_pert and "spo2" not in vitals_pert:
+        vitals_pert["spo2"] = vitals_pert["oxygen_saturation"]
+    elif "spo2" in vitals_pert and "oxygen_saturation" not in vitals_pert:
+        vitals_pert["oxygen_saturation"] = vitals_pert["spo2"]
+    
     # 1. Sensor Dropout
     for f in dropped_features:
         if f in vitals_pert:
             vitals_pert[f] = np.nan
+        if f == "oxygen_saturation":
+            vitals_pert["spo2"] = np.nan
+        elif f == "spo2":
+            vitals_pert["oxygen_saturation"] = np.nan
             
     # 2. Noise Injection
     if noise_sigma > 0:
         rng = np.random.RandomState(42)
-        scales = {"heart_rate": 12.0, "spo2": 4.0, "systolic_bp": 15.0, "diastolic_bp": 10.0, "respiratory_rate": 4.0, "temperature": 0.8}
+        scales = {
+            "heart_rate": 12.0, "spo2": 4.0, "oxygen_saturation": 4.0,
+            "systolic_bp": 15.0, "diastolic_bp": 10.0,
+            "respiratory_rate": 4.0, "temperature": 0.8
+        }
         for k in vitals_pert:
             if k not in dropped_features and not np.isnan(vitals_pert[k]):
                 noise = rng.normal(0, noise_sigma * scales.get(k, 5.0))
@@ -411,14 +434,19 @@ def run_whatif_experiment(
     
     delta_base = pert_base - orig_base
     delta_ga = pert_ga - orig_ga
+    prediction_change_mag = abs(delta_base)
+    
+    is_false_negative = bool(orig_base >= 0.50 and pert_base < 0.50)
+    is_false_positive = bool(orig_base < 0.50 and pert_base >= 0.50)
+    false_negative_risk_delta = float(max(0.0, orig_base - pert_base)) if orig_base >= 0.50 else 0.0
     
     # Ghost Signal Classification (Threshold 0.50)
     ghost_signal = "NONE"
-    if orig_base >= 0.50 and pert_base < 0.50:
+    if is_false_negative:
         ghost_signal = "SILENT_FAILURE"
-    elif orig_base < 0.50 and pert_base >= 0.50:
+    elif is_false_positive:
         ghost_signal = "SPURIOUS_ALARM"
-    elif abs(delta_base) >= 0.20:
+    elif prediction_change_mag >= 0.20:
         ghost_signal = "VOLATILITY_DRIFT"
 
     return {
@@ -430,8 +458,16 @@ def run_whatif_experiment(
         "ga_perturbed_risk": round(pert_ga, 3),
         "delta_baseline": round(delta_base, 3),
         "delta_ga": round(delta_ga, 3),
+        "prediction_change_magnitude": round(prediction_change_mag, 3),
+        "is_false_negative": is_false_negative,
+        "is_false_positive": is_false_positive,
+        "false_negative_risk_delta": round(false_negative_risk_delta, 3),
         "ghost_signal_detected": ghost_signal != "NONE",
-        "ghost_signal_mode": ghost_signal
+        "ghost_signal_mode": ghost_signal,
+        "sdg_alignment": {
+            "target_3_8": "Target 3.8: Bounded False Negative Rate (<2%) prevents missed decompensation during sensor drift.",
+            "target_3_d": "Target 3.d: Minimum Alarm-Stability Margin (MASC >= 0.15) suppresses spurious alarms and ICU alarm fatigue."
+        }
     }
 
 # Execute a critical decompensation stress test with SpO2 dropout
