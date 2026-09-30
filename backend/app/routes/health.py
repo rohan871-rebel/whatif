@@ -16,7 +16,7 @@ def create_health_router(app_state) -> APIRouter:
         models_ready = app_state.pipeline.is_trained
         return HealthResponse(
             status="healthy",
-            version="1.0.0",
+            version="1.2.0-optiforge",
             database_connected=db_connected,
             models_trained=models_ready,
             synthetic_mode=True,
