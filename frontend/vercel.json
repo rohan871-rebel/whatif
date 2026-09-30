@@ -1,0 +1,33 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://r1i6hs-ip-152-59-202-208.tunnelmole.net/api/:path*"
+    },
+    {
+      "source": "/openapi.json",
+      "destination": "https://r1i6hs-ip-152-59-202-208.tunnelmole.net/openapi.json"
+    },
+    {
+      "source": "/docs",
+      "destination": "https://r1i6hs-ip-152-59-202-208.tunnelmole.net/docs"
+    },
+    {
+      "source": "/llms.txt",
+      "destination": "https://r1i6hs-ip-152-59-202-208.tunnelmole.net/llms.txt"
+    },
+    {
+      "source": "/llms-full.txt",
+      "destination": "https://r1i6hs-ip-152-59-202-208.tunnelmole.net/llms-full.txt"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "https://r1i6hs-ip-152-59-202-208.tunnelmole.net/robots.txt"
+    },
+    {
+      "source": "/((?!assets|data|.*\\..*).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
