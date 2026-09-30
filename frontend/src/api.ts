@@ -1,6 +1,7 @@
 import {
   DashboardSummary,
   ModelComparisonResponse,
+  RobustnessCurveResponse,
   VitalRecord,
   RuleConfig,
   DataQualityReport,
@@ -210,4 +211,18 @@ export async function fetchExperiments(): Promise<ExperimentRecord[]> {
     isBackendConnected = false;
   }
   return [];
+}
+
+export async function fetchRobustnessCurve(): Promise<RobustnessCurveResponse | null> {
+  try {
+    const res = await fetch(`${BASE_URL}/models/robustness-curve`);
+    if (res.ok) {
+      isBackendConnected = true;
+      return await res.json();
+    }
+  } catch (err) {
+    console.warn('Backend unavailable for robustness curve', err);
+    isBackendConnected = false;
+  }
+  return null;
 }

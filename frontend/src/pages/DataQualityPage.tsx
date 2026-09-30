@@ -132,13 +132,20 @@ export const DataQualityPage: React.FC = () => {
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-white">{rule.name}</span>
-                  <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
-                    rule.severity === 'CRITICAL'
-                      ? 'bg-rose-950/40 text-rose-400 border-rose-800/40'
-                      : 'bg-amber-950/40 text-amber-400 border-amber-800/40'
-                  }`}>
-                    {rule.severity}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {rule.category && (
+                      <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-cyan-950/40 text-cyan-300 border border-cyan-800/40">
+                        {rule.category.replace('_', ' ')}
+                      </span>
+                    )}
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
+                      rule.severity === 'CRITICAL'
+                        ? 'bg-rose-950/40 text-rose-400 border-rose-800/40'
+                        : 'bg-amber-950/40 text-amber-400 border-amber-800/40'
+                    }`}>
+                      {rule.severity}
+                    </span>
+                  </div>
                 </div>
                 <p className="text-[11px] text-slate-400 leading-relaxed">{rule.description}</p>
               </div>
@@ -151,7 +158,7 @@ export const DataQualityPage: React.FC = () => {
                 </div>
                 <button
                   onClick={() => setEditingRule({ ...rule })}
-                  className="px-2.5 py-1 rounded bg-white/5 hover:bg-white/10 text-cyan-300 text-[11px] transition"
+                  className="px-2.5 py-1 rounded bg-white/5 hover:bg-white/10 text-cyan-300 text-[11px] transition focus:outline-none focus:ring-1 focus:ring-cyan-400"
                 >
                   Configure
                 </button>
@@ -194,6 +201,11 @@ export const DataQualityPage: React.FC = () => {
                     <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-white/5 text-slate-300">
                       {w.field}
                     </span>
+                    {w.category && (
+                      <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-violet-950/50 text-violet-300 border border-violet-800/30">
+                        {w.category.replace('_', ' ')}
+                      </span>
+                    )}
                     <span className="text-[10px] text-slate-500 font-mono">{w.timestamp}</span>
                   </div>
                   <p className="text-slate-300 text-xs leading-relaxed">{w.message}</p>
@@ -220,8 +232,11 @@ export const DataQualityPage: React.FC = () => {
             <div className="space-y-3">
               {editingRule.min_plausible !== undefined && (
                 <div>
-                  <label className="block text-xs text-slate-300 mb-1">Minimum Plausible Value</label>
+                  <label htmlFor="rule-min-plausible" className="block text-xs text-slate-300 mb-1">
+                    Minimum Plausible Value
+                  </label>
                   <input
+                    id="rule-min-plausible"
                     type="number"
                     step="any"
                     value={editingRule.min_plausible ?? ''}
@@ -229,15 +244,18 @@ export const DataQualityPage: React.FC = () => {
                       ...editingRule,
                       min_plausible: e.target.value === '' ? null : Number(e.target.value)
                     })}
-                    className="w-full px-3 py-1.5 rounded-lg bg-navy-850 border border-white/10 text-xs text-white focus:outline-none focus:border-cyan-500"
+                    className="w-full px-3 py-1.5 rounded-lg bg-navy-850 border border-white/10 text-xs text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
                   />
                 </div>
               )}
 
               {editingRule.max_plausible !== undefined && (
                 <div>
-                  <label className="block text-xs text-slate-300 mb-1">Maximum Plausible Value</label>
+                  <label htmlFor="rule-max-plausible" className="block text-xs text-slate-300 mb-1">
+                    Maximum Plausible Value
+                  </label>
                   <input
+                    id="rule-max-plausible"
                     type="number"
                     step="any"
                     value={editingRule.max_plausible ?? ''}
@@ -245,22 +263,25 @@ export const DataQualityPage: React.FC = () => {
                       ...editingRule,
                       max_plausible: e.target.value === '' ? null : Number(e.target.value)
                     })}
-                    className="w-full px-3 py-1.5 rounded-lg bg-navy-850 border border-white/10 text-xs text-white focus:outline-none focus:border-cyan-500"
+                    className="w-full px-3 py-1.5 rounded-lg bg-navy-850 border border-white/10 text-xs text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
                   />
                 </div>
               )}
 
               {editingRule.max_stale_minutes !== undefined && (
                 <div>
-                  <label className="block text-xs text-slate-300 mb-1">Max Stale Telemetry (Minutes)</label>
+                  <label htmlFor="rule-max-stale" className="block text-xs text-slate-300 mb-1">
+                    Max Stale Telemetry (Minutes)
+                  </label>
                   <input
+                    id="rule-max-stale"
                     type="number"
                     value={editingRule.max_stale_minutes ?? ''}
                     onChange={(e) => setEditingRule({
                       ...editingRule,
                       max_stale_minutes: e.target.value === '' ? null : Number(e.target.value)
                     })}
-                    className="w-full px-3 py-1.5 rounded-lg bg-navy-850 border border-white/10 text-xs text-white focus:outline-none focus:border-cyan-500"
+                    className="w-full px-3 py-1.5 rounded-lg bg-navy-850 border border-white/10 text-xs text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
                   />
                 </div>
               )}

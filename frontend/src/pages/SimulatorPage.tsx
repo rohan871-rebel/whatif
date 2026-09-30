@@ -189,11 +189,13 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({ initialRecord }) =
 
         {/* Record Selection Dropdown */}
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400 font-mono">Select Patient Record:</span>
+          <label htmlFor="patient-record-select" className="text-xs text-slate-400 font-mono">Select Patient Record:</label>
           <select
+            id="patient-record-select"
+            aria-label="Select Patient Record"
             value={selectedRecordId}
             onChange={(e) => handleRecordSelectChange(e.target.value)}
-            className="bg-navy-900 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-cyan-500"
+            className="bg-navy-900 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-400"
           >
             {availableRecords.map((r) => (
               <option key={r.record_id} value={r.record_id}>
@@ -206,7 +208,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({ initialRecord }) =
 
       {/* Validation or Error Message */}
       {validationError && (
-        <div className="p-4 rounded-xl bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-3">
+        <div role="alert" className="p-4 rounded-xl bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-3">
           <AlertTriangle className="w-5 h-5 shrink-0" />
           <span>{validationError}</span>
         </div>
@@ -238,87 +240,98 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({ initialRecord }) =
             <div className="grid grid-cols-2 gap-4">
               {/* Heart Rate */}
               <div>
-                <label className="flex items-center justify-between text-xs text-slate-300 mb-1">
+                <label htmlFor="vital-heart-rate" className="flex items-center justify-between text-xs text-slate-300 mb-1">
                   <span>Heart Rate</span>
                   <span className="font-mono text-cyan-400">{vitals.heart_rate} bpm</span>
                 </label>
                 <input
+                  id="vital-heart-rate"
                   type="number"
+                  aria-label="Heart Rate in bpm"
                   value={vitals.heart_rate}
                   onChange={(e) => setVitals({ ...vitals, heart_rate: e.target.value === '' ? '' : Number(e.target.value) })}
-                  className="w-full px-3 py-1.5 rounded-lg bg-navy-900 border border-white/10 text-xs font-mono text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full px-3 py-1.5 rounded-lg bg-navy-900 border border-white/10 text-xs font-mono text-white focus:outline-none focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-400"
                 />
               </div>
 
               {/* SpO2 / Oxygen Saturation */}
               <div>
-                <label className="flex items-center justify-between text-xs text-slate-300 mb-1">
+                <label htmlFor="vital-spo2" className="flex items-center justify-between text-xs text-slate-300 mb-1">
                   <span>Oxygen Saturation (SpO₂)</span>
                   <span className="font-mono text-cyan-400">{vitals.spo2} %</span>
                 </label>
                 <input
+                  id="vital-spo2"
                   type="number"
                   aria-label="Oxygen Saturation (SpO2) percentage"
                   value={vitals.spo2}
                   onChange={(e) => setVitals({ ...vitals, spo2: e.target.value === '' ? '' : Number(e.target.value) })}
-                  className="w-full px-3 py-1.5 rounded-lg bg-navy-900 border border-white/10 text-xs font-mono text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full px-3 py-1.5 rounded-lg bg-navy-900 border border-white/10 text-xs font-mono text-white focus:outline-none focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-400"
                 />
               </div>
 
               {/* Systolic BP */}
               <div>
-                <label className="flex items-center justify-between text-xs text-slate-300 mb-1">
+                <label htmlFor="vital-systolic-bp" className="flex items-center justify-between text-xs text-slate-300 mb-1">
                   <span>Systolic BP</span>
                   <span className="font-mono text-cyan-400">{vitals.systolic_bp} mmHg</span>
                 </label>
                 <input
+                  id="vital-systolic-bp"
                   type="number"
+                  aria-label="Systolic Blood Pressure in mmHg"
                   value={vitals.systolic_bp}
                   onChange={(e) => setVitals({ ...vitals, systolic_bp: e.target.value === '' ? '' : Number(e.target.value) })}
-                  className="w-full px-3 py-1.5 rounded-lg bg-navy-900 border border-white/10 text-xs font-mono text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full px-3 py-1.5 rounded-lg bg-navy-900 border border-white/10 text-xs font-mono text-white focus:outline-none focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-400"
                 />
               </div>
 
               {/* Diastolic BP */}
               <div>
-                <label className="flex items-center justify-between text-xs text-slate-300 mb-1">
+                <label htmlFor="vital-diastolic-bp" className="flex items-center justify-between text-xs text-slate-300 mb-1">
                   <span>Diastolic BP</span>
                   <span className="font-mono text-cyan-400">{vitals.diastolic_bp} mmHg</span>
                 </label>
                 <input
+                  id="vital-diastolic-bp"
                   type="number"
+                  aria-label="Diastolic Blood Pressure in mmHg"
                   value={vitals.diastolic_bp}
                   onChange={(e) => setVitals({ ...vitals, diastolic_bp: e.target.value === '' ? '' : Number(e.target.value) })}
-                  className="w-full px-3 py-1.5 rounded-lg bg-navy-900 border border-white/10 text-xs font-mono text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full px-3 py-1.5 rounded-lg bg-navy-900 border border-white/10 text-xs font-mono text-white focus:outline-none focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-400"
                 />
               </div>
 
               {/* Respiratory Rate */}
               <div>
-                <label className="flex items-center justify-between text-xs text-slate-300 mb-1">
+                <label htmlFor="vital-respiratory-rate" className="flex items-center justify-between text-xs text-slate-300 mb-1">
                   <span>Respiratory Rate</span>
                   <span className="font-mono text-cyan-400">{vitals.respiratory_rate} bpm</span>
                 </label>
                 <input
+                  id="vital-respiratory-rate"
                   type="number"
+                  aria-label="Respiratory Rate in breaths per minute"
                   value={vitals.respiratory_rate}
                   onChange={(e) => setVitals({ ...vitals, respiratory_rate: e.target.value === '' ? '' : Number(e.target.value) })}
-                  className="w-full px-3 py-1.5 rounded-lg bg-navy-900 border border-white/10 text-xs font-mono text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full px-3 py-1.5 rounded-lg bg-navy-900 border border-white/10 text-xs font-mono text-white focus:outline-none focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-400"
                 />
               </div>
 
               {/* Temperature */}
               <div>
-                <label className="flex items-center justify-between text-xs text-slate-300 mb-1">
+                <label htmlFor="vital-temperature" className="flex items-center justify-between text-xs text-slate-300 mb-1">
                   <span>Temperature</span>
                   <span className="font-mono text-cyan-400">{vitals.temperature} °C</span>
                 </label>
                 <input
+                  id="vital-temperature"
                   type="number"
                   step="0.1"
+                  aria-label="Body Temperature in Celsius"
                   value={vitals.temperature}
                   onChange={(e) => setVitals({ ...vitals, temperature: e.target.value === '' ? '' : Number(e.target.value) })}
-                  className="w-full px-3 py-1.5 rounded-lg bg-navy-900 border border-white/10 text-xs font-mono text-white focus:outline-none focus:border-cyan-500"
+                  className="w-full px-3 py-1.5 rounded-lg bg-navy-900 border border-white/10 text-xs font-mono text-white focus:outline-none focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-400"
                 />
               </div>
             </div>
@@ -409,13 +422,14 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({ initialRecord }) =
 
             {/* Experiment Notes */}
             <div className="space-y-1 pt-2 border-t border-white/5">
-              <label className="block text-xs text-slate-400">Experiment Hypothesis / Custom Notes (optional):</label>
+              <label htmlFor="experiment-notes" className="block text-xs text-slate-400">Experiment Hypothesis / Custom Notes (optional):</label>
               <input
+                id="experiment-notes"
                 type="text"
                 placeholder="e.g. Testing SpO2 detachment while tachycardic"
                 value={customNotes}
                 onChange={(e) => setCustomNotes(e.target.value)}
-                className="w-full px-3 py-1.5 rounded-lg bg-navy-900 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                className="w-full px-3 py-1.5 rounded-lg bg-navy-900 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus-visible:ring-2 focus-visible:ring-cyan-400"
               />
             </div>
 
@@ -424,7 +438,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({ initialRecord }) =
               <button
                 type="button"
                 onClick={handleResetToBaseline}
-                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-navy-850 hover:bg-navy-800 text-slate-300 border border-white/10 text-xs font-medium transition"
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-navy-850 hover:bg-navy-800 text-slate-300 border border-white/10 text-xs font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-navy-950"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>Reset Vitals</span>
@@ -433,7 +447,7 @@ export const SimulatorPage: React.FC<SimulatorPageProps> = ({ initialRecord }) =
                 type="button"
                 onClick={handleRunSimulation}
                 disabled={isRunning}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-navy-950 font-bold text-xs shadow-apple-glow transition disabled:opacity-50"
+                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-navy-950 font-bold text-xs shadow-apple-glow transition disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 focus-visible:ring-offset-2 focus-visible:ring-offset-navy-950"
               >
                 <Play className="w-3.5 h-3.5 fill-current" />
                 <span>{isRunning ? 'Computing Inference...' : 'Run WHAT IF Experiment'}</span>

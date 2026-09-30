@@ -97,19 +97,24 @@ export const ExplorerPage: React.FC<ExplorerPageProps> = ({ onSelectRecordForSim
           <a
             href="/api/records/sample-csv"
             download="ghost_signal_sample_vitals.csv"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-navy-850 hover:bg-navy-800 text-slate-200 border border-white/10 text-xs font-medium transition"
+            aria-label="Download sample vital telemetry CSV"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-navy-850 hover:bg-navy-800 text-slate-200 border border-white/10 text-xs font-medium transition focus:outline-none focus:ring-1 focus:ring-cyan-500"
           >
-            <Download className="w-3.5 h-3.5 text-cyan-400" />
+            <Download className="w-3.5 h-3.5 text-cyan-400" aria-hidden="true" />
             <span>Sample CSV</span>
           </a>
 
           {/* Upload CSV button */}
-          <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-medium cursor-pointer transition">
-            <Upload className="w-3.5 h-3.5" />
+          <label
+            aria-label="Upload custom CSV telemetry dataset"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-medium cursor-pointer transition focus-within:ring-1 focus-within:ring-cyan-500"
+          >
+            <Upload className="w-3.5 h-3.5" aria-hidden="true" />
             <span>{isUploading ? 'Ingesting...' : 'Upload CSV'}</span>
             <input
               type="file"
               accept=".csv"
+              aria-label="Select CSV dataset file"
               onChange={handleFileUpload}
               disabled={isUploading}
               className="hidden"
@@ -136,24 +141,28 @@ export const ExplorerPage: React.FC<ExplorerPageProps> = ({ onSelectRecordForSim
       <div className="glass-panel p-4 rounded-2xl border border-white/10 flex flex-wrap items-center gap-3">
         {/* Search */}
         <div className="relative flex-1 min-w-[200px]">
-          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" aria-hidden="true" />
           <input
+            id="search-record-input"
             type="text"
             placeholder="Search Record ID (e.g. REC-1001)..."
+            aria-label="Search records by ID"
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-            className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-navy-900 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50"
+            className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-navy-900 border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500"
           />
         </div>
 
         {/* Quality Status Filter */}
         <div className="flex items-center gap-1.5 text-xs text-slate-400">
-          <Filter className="w-3.5 h-3.5" />
-          <span>Status:</span>
+          <Filter className="w-3.5 h-3.5" aria-hidden="true" />
+          <label htmlFor="filter-quality-status">Status:</label>
           <select
+            id="filter-quality-status"
+            aria-label="Filter by telemetry quality status"
             value={qualityFilter}
             onChange={(e) => { setQualityFilter(e.target.value); setPage(0); }}
-            className="bg-navy-900 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
+            className="bg-navy-900 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
           >
             <option value="">All Statuses</option>
             <option value="CLEAN">Clean (No Warnings)</option>
@@ -164,15 +173,17 @@ export const ExplorerPage: React.FC<ExplorerPageProps> = ({ onSelectRecordForSim
 
         {/* Critical Filter */}
         <div className="flex items-center gap-1.5 text-xs text-slate-400">
-          <span>Acuity:</span>
+          <label htmlFor="filter-acuity-status">Acuity:</label>
           <select
+            id="filter-acuity-status"
+            aria-label="Filter by patient acuity status"
             value={criticalFilter === undefined ? '' : String(criticalFilter)}
             onChange={(e) => {
               const val = e.target.value;
               setCriticalFilter(val === '' ? undefined : Number(val));
               setPage(0);
             }}
-            className="bg-navy-900 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
+            className="bg-navy-900 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500"
           >
             <option value="">All Acuities</option>
             <option value="1">Critical Only (1)</option>
@@ -317,17 +328,19 @@ export const ExplorerPage: React.FC<ExplorerPageProps> = ({ onSelectRecordForSim
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => setSelectedRecord(r)}
-                            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition"
+                            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition focus:outline-none focus:ring-1 focus:ring-cyan-500"
                             title="View Detail"
+                            aria-label={`View detail for record ${r.record_id}`}
                           >
-                            <Eye className="w-3.5 h-3.5" />
+                            <Eye className="w-3.5 h-3.5" aria-hidden="true" />
                           </button>
                           <button
                             onClick={() => onSelectRecordForSimulation(r)}
-                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[11px] font-sans transition"
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-[11px] font-sans transition focus:outline-none focus:ring-1 focus:ring-cyan-500"
                             title="Load record into WHAT IF Simulator"
+                            aria-label={`Load record ${r.record_id} into simulator`}
                           >
-                            <Sliders className="w-3 h-3" />
+                            <Sliders className="w-3 h-3" aria-hidden="true" />
                             <span>Simulate</span>
                           </button>
                         </div>
@@ -351,7 +364,8 @@ export const ExplorerPage: React.FC<ExplorerPageProps> = ({ onSelectRecordForSim
             <button
               onClick={() => setPage(Math.max(0, page - 1))}
               disabled={page === 0}
-              className="px-3 py-1.5 rounded-lg bg-navy-850 hover:bg-navy-800 text-slate-200 border border-white/10 disabled:opacity-40 transition"
+              aria-label="Previous page"
+              className="px-3 py-1.5 rounded-lg bg-navy-850 hover:bg-navy-800 text-slate-200 border border-white/10 disabled:opacity-40 transition focus:outline-none focus:ring-1 focus:ring-cyan-500"
             >
               Previous
             </button>
@@ -359,7 +373,8 @@ export const ExplorerPage: React.FC<ExplorerPageProps> = ({ onSelectRecordForSim
             <button
               onClick={() => setPage(page + 1)}
               disabled={(page + 1) * limit >= total}
-              className="px-3 py-1.5 rounded-lg bg-navy-850 hover:bg-navy-800 text-slate-200 border border-white/10 disabled:opacity-40 transition"
+              aria-label="Next page"
+              className="px-3 py-1.5 rounded-lg bg-navy-850 hover:bg-navy-800 text-slate-200 border border-white/10 disabled:opacity-40 transition focus:outline-none focus:ring-1 focus:ring-cyan-500"
             >
               Next
             </button>

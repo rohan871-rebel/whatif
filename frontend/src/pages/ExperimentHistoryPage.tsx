@@ -43,18 +43,20 @@ export const ExperimentHistoryPage: React.FC = () => {
           <button
             onClick={loadExperiments}
             disabled={isLoading}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-navy-850 hover:bg-navy-800 text-slate-200 border border-white/10 text-xs font-medium transition"
+            aria-label="Refresh experiment history list"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-navy-850 hover:bg-navy-800 text-slate-200 border border-white/10 text-xs font-medium transition focus:outline-none focus:ring-1 focus:ring-cyan-500"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-cyan-400' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-cyan-400' : ''}`} aria-hidden="true" />
             <span>Refresh</span>
           </button>
 
           <a
             href="/api/experiments/export-csv"
             download="ghost_signal_experiments.csv"
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-navy-950 text-xs font-semibold shadow-apple-glow transition"
+            aria-label="Export experiment history as CSV file"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-navy-950 text-xs font-semibold shadow-apple-glow transition focus:outline-none focus:ring-1 focus:ring-cyan-400"
           >
-            <Download className="w-3.5 h-3.5" />
+            <Download className="w-3.5 h-3.5" aria-hidden="true" />
             <span>Export History as CSV</span>
           </a>
         </div>

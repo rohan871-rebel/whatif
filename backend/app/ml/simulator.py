@@ -50,6 +50,7 @@ class WhatIfSimulator:
                         std_scale = {
                             "heart_rate": 12.0,
                             "spo2": 4.0,
+                            "oxygen_saturation": 4.0,
                             "systolic_bp": 15.0,
                             "diastolic_bp": 10.0,
                             "respiratory_rate": 4.0,
@@ -60,7 +61,7 @@ class WhatIfSimulator:
                         perturbed_val = round(num_val + noise, 1)
                         
                         # Clip within physical limits
-                        if field == "spo2":
+                        if field in ["spo2", "oxygen_saturation"]:
                             perturbed_val = max(50.0, min(100.0, perturbed_val))
                         elif field in ["heart_rate", "respiratory_rate", "systolic_bp", "diastolic_bp"]:
                             perturbed_val = max(10.0, perturbed_val)
@@ -178,6 +179,9 @@ class WhatIfSimulator:
             is_false_negative=is_false_negative,
             is_false_positive=is_false_positive,
             false_negative_risk_delta=false_negative_risk_delta,
+            sensor_dropout_fields=req.dropped_fields,
+            gaussian_noise_sigma=req.noise_std,
+            stale_telemetry_detected=bool(req.timestamp_stale_minutes >= 120),
             ghost_signal_detected=ghost_signal_detected,
             ghost_signal_type=ghost_signal_type,
             ghost_signal_severity=ghost_severity,

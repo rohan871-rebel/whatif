@@ -21,6 +21,7 @@ export interface RuleConfig {
   rule_id: string;
   field: string;
   name: string;
+  category?: string;
   min_plausible?: number | null;
   max_plausible?: number | null;
   max_stale_minutes?: number | null;
@@ -33,6 +34,7 @@ export interface DataQualityWarning {
   record_id: string;
   field: string;
   rule_id: string;
+  category?: string;
   severity: string;
   message: string;
   current_value?: any;
@@ -80,6 +82,9 @@ export interface WhatIfResponse {
   is_false_negative?: boolean;
   is_false_positive?: boolean;
   false_negative_risk_delta?: number | null;
+  sensor_dropout_fields?: string[];
+  gaussian_noise_sigma?: number;
+  stale_telemetry_detected?: boolean;
   ghost_signal_detected: boolean;
   ghost_signal_type: 'SILENT_FAILURE' | 'SPURIOUS_ALARM' | 'VOLATILITY_DRIFT' | null;
   ghost_signal_severity: 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH';
@@ -97,6 +102,10 @@ export interface ModelMetrics {
   false_negative_count: number;
   critical_cases_count: number;
   mean_absolute_score_change: number;
+  brier_score?: number;
+  f1_score?: number;
+  specificity?: number;
+  accuracy?: number;
   selected_features_count: number;
   selected_feature_names: string[];
   all_feature_names: string[];
@@ -113,6 +122,21 @@ export interface ModelMetrics {
   disclaimer: string;
 }
 
+export interface RobustnessCurvePoint {
+  noise_sigma: number;
+  baseline_drift: number;
+  ga_drift: number;
+  robustness_gain_percent: number;
+}
+
+export interface RobustnessCurveResponse {
+  curve_points: RobustnessCurvePoint[];
+  test_samples: number;
+  random_seed: number;
+  evaluation_split: string;
+  disclaimer: string;
+}
+
 export interface ModelComparisonResponse {
   baseline_model: ModelMetrics;
   ga_model: ModelMetrics;
@@ -122,6 +146,10 @@ export interface ModelComparisonResponse {
     test_samples: number;
     critical_test_samples: number;
     non_critical_test_samples: number;
+    identical_test_split?: boolean;
+    fair_comparison_verified?: boolean;
+    data_leakage_prevented?: boolean;
+    random_seed?: number;
   };
 }
 

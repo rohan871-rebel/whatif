@@ -73,6 +73,24 @@ def test_api_model_comparison(client):
     assert "false_negative_rate" in data["baseline_model"]
     assert "false_negative_count" in data["baseline_model"]
     assert "mean_absolute_score_change" in data["baseline_model"]
+    assert "brier_score" in data["baseline_model"]
+    assert "f1_score" in data["baseline_model"]
+    assert "specificity" in data["baseline_model"]
+
+
+def test_api_robustness_curve(client):
+    res = client.get("/api/models/robustness-curve")
+    assert res.status_code == 200
+    data = res.json()
+    assert "curve_points" in data
+    assert len(data["curve_points"]) >= 5
+    assert data["test_samples"] > 0
+    assert "reproducible seed" in data["evaluation_split"]
+    first = data["curve_points"][0]
+    assert first["noise_sigma"] == 0.0
+    assert "baseline_drift" in first
+    assert "ga_drift" in first
+    assert "robustness_gain_percent" in first
 
 
 def test_api_what_if_simulator(client):

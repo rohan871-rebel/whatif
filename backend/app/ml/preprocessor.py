@@ -61,7 +61,10 @@ class VitalPreprocessor:
             df["pulse_pressure"] = df["systolic_bp"] - df["diastolic_bp"]
             
             # Mean Arterial Pressure (MAP): DBP + 1/3 (SBP - DBP)
-            df["mean_arterial_bp"] = df["diastolic_bp"] + (df["pulse_pressure"] / 3.0)
+            # Synchronize canonical clinical name (mean_arterial_pressure) and internal alias (mean_arterial_bp)
+            map_val = df["diastolic_bp"] + (df["pulse_pressure"] / 3.0)
+            df["mean_arterial_bp"] = map_val
+            df["mean_arterial_pressure"] = map_val
             
         return df
 

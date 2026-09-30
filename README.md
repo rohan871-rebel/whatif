@@ -27,19 +27,91 @@ However, real-world clinical telemetry is notoriously vulnerable to data corrupt
 
 ---
 
-## 2. Core Declared Problem Concepts & System Architecture
+## 2. System Architecture & End-to-End Data Flow
 
-The platform directly implements and validates the seven core declared problem concepts:
+```mermaid
+flowchart TD
+    subgraph INGESTION["1. Telemetry Ingestion Layer"]
+        A1["Raw Vitals Input Stream\n(HR, SpO2, SBP, DBP, RR, Temp)"]
+        A2["Canonical Alias Mapping\n(oxygen_saturation, mean_arterial_pressure)"]
+        A1 --> A2
+    end
 
-| Declared Concept | Code Implementation | Reliability Role |
-| :--- | :--- | :--- |
-| **1. Vital Signs Telemetry** | `heart_rate`, `spo2` / `oxygen_saturation`, `systolic_bp`, `diastolic_bp`, `respiratory_rate`, `temperature` | Raw physiological streams with clinical terminology aliases and derived hemodynamic indices (`shock_index`, `pulse_pressure`, `mean_arterial_bp`). |
-| **2. Data-Quality Warnings & Rules** | `DataQualityMonitor`, `RuleConfig`, boundary audits | Pre-inference screening detecting missing values, physiological impossibility, pressure inversions ($\text{DBP} \ge \text{SBP}$), and stale buffers ($>120\text{m}$). |
-| **3. Random Forest Risk Classification** | `RandomForestClassifier` (100 estimators, balanced) | Baseline early-warning risk scoring with class balancing on stratified splits. |
-| **4. Genetic Algorithm Feature Selection** | `GeneticAlgorithmFeatureSelector` | Multi-objective evolutionary search balancing validation AUROC, perturbation resilience (noise dampening), and parsimony. |
-| **5. Controlled What-If Simulations** | `WhatIfSimulator.simulate_experiment` | Sandboxed perturbation engine applying Gaussian noise ($\sigma \in [0, 1.0]$), probe dropouts, and staleness drift. |
-| **6. Baseline vs. GA Comparison** | `ModelComparisonResponse`, `evaluate_model` | Benchmarking on identical untouched held-out test records across AUROC, Brier score, and ROC curves. |
-| **7. Evaluation of Prediction Changes & False Negatives** | `prediction_change_magnitude`, `is_false_negative`, `is_false_positive` | Explicitly classifies Silent Failures (false negatives) and Spurious Alarms (false positives) under perturbation. |
+    subgraph SCREENING["2. Pre-Inference Data Quality Screening"]
+        B1["PHYSIOLOGICAL_PLAUSIBILITY\n(Plauisibility Range Checks)"]
+        B2["TELEMETRY_FRESHNESS\n(Buffer Staleness > 120m)"]
+        B3["RELATIONAL_INTEGRITY\n(DBP >= SBP Inversion)"]
+        A2 --> B1
+        A2 --> B2
+        A2 --> B3
+        B1 & B2 & B3 --> B4["DataQualityReport\n(Clean / Warning / Defect)"]
+    end
+
+    subgraph PIPELINE["3. Leakage-Free Preprocessing & Features"]
+        C1["Stratified Split (60% Train, 20% Val, 20% Test)"]
+        C2["Imputation & Scaling Fitted on Train Only"]
+        C3["Derived Hemodynamic Indices\n(Shock Index, Pulse Pressure, MAP)"]
+        B4 --> C1 --> C2 --> C3
+    end
+
+    subgraph MODELS["4. Dual Model Execution"]
+        D1["Baseline Random Forest\n(All 9 Features Included)"]
+        D2["Genetic Algorithm Feature Selector\n(Fitness = AUROC - 0.28·MASC - 0.06·Sparsity)"]
+        D3["Robust GA-Selected RF\n(Noise-Insensitive Parsimonious Subset)"]
+        C3 --> D1
+        C3 --> D2 --> D3
+    end
+
+    subgraph PERTURBATION["5. WHAT IF Simulation & Robustness Sweep"]
+        E1["Controlled Perturbations\n(Gaussian Noise σ, Sensor Dropout, Timestamp Drift)"]
+        E2["Continuous Robustness Sweep\n(/api/models/robustness-curve, σ ∈ [0.0, 0.8])"]
+        D1 & D3 --> E1
+        D1 & D3 --> E2
+    end
+
+    subgraph METRICS["6. Comparative Reliability Benchmarking"]
+        F1["Discrimination: AUROC, Sensitivity, Specificity, F1 Score"]
+        F2["Calibration: Brier Score (Lower is Better)"]
+        F3["Telemetry Stability: MASC (Mean Absolute Score Change)"]
+        F4["Failure Mode Categorization: Silent Failure vs Spurious Alarm"]
+        E1 & E2 --> F1 & F2 & F3 & F4
+    end
+```
+
+---
+
+## 3. Core Declared Problem Concepts & Canonical Implementation
+
+The platform provides 100% test coverage and validation across all declared concepts:
+
+| Category | Declared Concept / Variable | Code Implementation | Architectural Role |
+| :--- | :--- | :--- | :--- |
+| **Vital Signs Telemetry** | `heart_rate` | `schemas.VitalsPayload`, `preprocessor.py` | Primary cardiac telemetry stream (bpm). |
+| | `spo2` / `oxygen_saturation` | `preprocessor.py`, `data_quality.py` | Peripheral capillary oxygen saturation with canonical aliases. |
+| | `systolic_bp` / `diastolic_bp` | `schemas.py`, `preprocessor.py` | Non-invasive blood pressure telemetry (mmHg). |
+| | `respiratory_rate` | `schemas.py`, `preprocessor.py` | Ventilatory frequency stream (breaths/min). |
+| | `temperature` | `schemas.py`, `preprocessor.py` | Core/surface body temperature (°C). |
+| | `mean_arterial_pressure` | `ALL_DERIVED_FEATURES`, `preprocessor.py` | Hemodynamic perfusion pressure ($2/3\,\text{DBP} + 1/3\,\text{SBP}$). |
+| | `shock_index` | `preprocessor.py` | Ratio of Heart Rate to Systolic BP ($\text{HR}/\text{SBP}$). |
+| | `pulse_pressure` | `preprocessor.py` | Dynamic arterial compliance ($\text{SBP} - \text{DBP}$). |
+| **Data Quality Screening** | `PHYSIOLOGICAL_PLAUSIBILITY` | `RuleConfig.category`, `data_quality.py` | Enforces biological bounds (e.g. SpO2 $\le 100\%$, HR $\le 240$). |
+| | `TELEMETRY_FRESHNESS` | `RuleConfig.category`, `data_quality.py` | Flags stale sensor cache buffers exceeding configurable minutes. |
+| | `RELATIONAL_INTEGRITY` | `RuleConfig.category`, `data_quality.py` | Flags physically impossible blood pressure inversions ($\text{DBP} \ge \text{SBP}$). |
+| | `sensor_dropout` | `WhatIfRequest.dropped_fields` | Simulates lead detachment and probe disconnects. |
+| **Model Architectures** | `RandomForestClassifier` | `MLPipeline.baseline_model` | Unpruned ensemble of 100 decision trees with balanced class weights. |
+| | `GeneticAlgorithmFeatureSelector` | `models.py` | Multi-objective chromosome optimization over successive generations. |
+| **Evaluation Metrics** | `auroc` | `ModelMetrics.auroc` | Area under Receiver Operating Characteristic curve. |
+| | `brier_score` | `ModelMetrics.brier_score` | Mean squared calibration error between predicted probabilities and labels. |
+| | `f1_score` | `ModelMetrics.f1_score` | Harmonic mean of precision and recall at decision threshold $\tau$. |
+| | `specificity` | `ModelMetrics.specificity` | True Negative Rate ($TN / (TN + FP)$) to measure alarm fatigue resilience. |
+| | `recall_sensitivity` | `ModelMetrics.recall_sensitivity` | True Positive Rate ($TP / (TP + FN)$) tracking critical decompensation. |
+| | `false_negative_rate` | `ModelMetrics.false_negative_rate` | Proportion of deteriorating patients missed ($1 - \text{Recall}$). |
+| | `mean_absolute_score_change` | `ModelMetrics.mean_absolute_score_change` | Mean volatility $|P_{\text{orig}} - P_{\text{pert}}|$ quantifying score drift. |
+| **Continuous Sweeps** | `robustness_curve` | `/api/models/robustness-curve` | Empirical noise sweeps over $\sigma \in [0.0, 0.8]$ validating drift dampening. |
+| **Pathology Classification** | `silent_failure` | `WhatIfResponse.ghost_signal_type` | True critical patient masked by naive imputation / dropout. |
+| | `spurious_alarm` | `WhatIfResponse.ghost_signal_type` | Stable patient pushed into critical risk alert by high-frequency artifact. |
+| **Global Alignment** | `UN SDG 3` | Good Health & Well-Being | Research engineering motivation for early-warning reliability and alarm fatigue reduction. |
+| | `UN SDG 9` | Industry & Innovation | Engineering robust edge AI architectures under noisy real-world telemetry constraints. |
 
 ---
 
@@ -163,7 +235,7 @@ Run the complete test suite across data quality rules, ML leakage prevention, Wh
 PYTHONPATH=backend python3 -m pytest backend/tests -v
 ```
 
-### Verified Test Suite (35 Tests Passing)
+### Verified Test Suite (39 Tests Passing)
 ```
 backend/tests/test_api.py::test_api_health PASSED
 backend/tests/test_api.py::test_api_dashboard_summary PASSED
@@ -171,6 +243,7 @@ backend/tests/test_api.py::test_api_records_list PASSED
 backend/tests/test_api.py::test_api_record_detail PASSED
 backend/tests/test_api.py::test_api_record_detail_404 PASSED
 backend/tests/test_api.py::test_api_model_comparison PASSED
+backend/tests/test_api.py::test_api_robustness_curve PASSED
 backend/tests/test_api.py::test_api_what_if_simulator PASSED
 backend/tests/test_api.py::test_api_what_if_simulator_invalid_inputs PASSED
 backend/tests/test_api.py::test_api_sample_csv_download PASSED
@@ -196,11 +269,14 @@ backend/tests/test_ml_pipeline.py::test_preprocessor_all_nans_fallback PASSED
 backend/tests/test_ml_pipeline.py::test_evaluation_consistency_and_same_test_records PASSED
 backend/tests/test_ml_pipeline.py::test_ml_pipeline_train_and_evaluate PASSED
 backend/tests/test_ml_pipeline.py::test_predict_single_vitals PASSED
+backend/tests/test_ml_pipeline.py::test_extended_metrics_and_calibration PASSED
+backend/tests/test_ml_pipeline.py::test_robustness_curve_computation PASSED
+backend/tests/test_ml_pipeline.py::test_map_canonical_naming_and_aliasing PASSED
 backend/tests/test_whatif_simulator.py::test_whatif_simulator_clean_baseline PASSED
 backend/tests/test_whatif_simulator.py::test_whatif_simulator_silent_failure_false_negative PASSED
 backend/tests/test_whatif_simulator.py::test_whatif_simulator_spurious_alarm_noise_spike PASSED
 backend/tests/test_whatif_simulator.py::test_whatif_simulator_reproducible_output PASSED
-================== 35 passed, 1 warning ==================
+================== 39 passed, 1 warning ==================
 ```
 
 ---

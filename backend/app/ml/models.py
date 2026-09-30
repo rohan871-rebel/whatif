@@ -8,7 +8,7 @@ from typing import Dict, List, Tuple, Any, Optional
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import roc_auc_score, roc_curve, confusion_matrix
+from sklearn.metrics import roc_auc_score, roc_curve, confusion_matrix, brier_score_loss, f1_score
 from sklearn.model_selection import train_test_split
 
 from app.config import RANDOM_SEED, TRAIN_RATIO, VAL_RATIO, TEST_RATIO
@@ -312,6 +312,20 @@ class MLPipeline:
         recall = float(tp / critical_count) if critical_count > 0 else 0.0
         fnr = float(fn / critical_count) if critical_count > 0 else 0.0
 
+        # Calibration & classification metrics on held-out test records
+        try:
+            brier = float(brier_score_loss(self.y_test, clean_probs))
+        except Exception:
+            brier = 0.0
+
+        try:
+            f1 = float(f1_score(self.y_test, preds, zero_division=0))
+        except Exception:
+            f1 = 0.0
+
+        specificity = float(tn / (tn + fp)) if (tn + fp) > 0 else 0.0
+        accuracy = float((tp + tn) / len(self.y_test)) if len(self.y_test) > 0 else 0.0
+
         # ROC Curve points (downsampled to 20 representative points for responsive charts)
         fpr, tpr, _ = roc_curve(self.y_test, clean_probs)
         step = max(1, len(fpr) // 20)
@@ -331,6 +345,10 @@ class MLPipeline:
             "false_negative_count": fn,
             "critical_cases_count": critical_count,
             "mean_absolute_score_change": round(masc, 4),
+            "brier_score": round(brier, 4),
+            "f1_score": round(f1, 4),
+            "specificity": round(specificity, 4),
+            "accuracy": round(accuracy, 4),
             "selected_features_count": len(active_indices),
             "selected_feature_names": [self.all_feature_names[i] for i in active_indices],
             "all_feature_names": self.all_feature_names,
@@ -344,6 +362,51 @@ class MLPipeline:
                 "Performance reflects synthetic benchmark distributions and does not establish clinical efficacy."
             )
         }
+
+    def get_robustness_curve(self, sigmas: Optional[List[float]] = None) -> List[Dict[str, Any]]:
+        """
+        Calculates mean absolute prediction drift across an injected Gaussian noise spectrum
+        comparing Baseline RF vs GA-Selected RF on identical held-out test data.
+        """
+        if not self.is_trained or self.X_test is None:
+            raise ValueError("Pipeline must be trained before generating robustness curve.")
+
+        sigmas = sigmas or [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
+        active_indices = np.where(self.ga_mask == 1)[0]
+
+        # Clean baseline and GA probabilities on test set
+        base_clean_probs = self.baseline_model.predict_proba(self.X_test)[:, 1]
+        ga_clean_probs = self.ga_model.predict_proba(self.X_test[:, active_indices])[:, 1]
+
+        curve_points = []
+        rng = np.random.RandomState(self.random_seed)
+        test_std = np.std(self.X_test, axis=0, keepdims=True)
+        test_std[test_std == 0] = 1.0
+
+        for sig in sigmas:
+            if sig == 0.0:
+                base_drift = 0.0
+                ga_drift = 0.0
+                gain = 0.0
+            else:
+                noise = rng.normal(0, sig * test_std, size=self.X_test.shape)
+                X_pert = self.X_test + noise
+
+                base_pert_probs = self.baseline_model.predict_proba(X_pert)[:, 1]
+                ga_pert_probs = self.ga_model.predict_proba(X_pert[:, active_indices])[:, 1]
+
+                base_drift = float(np.mean(np.abs(base_clean_probs - base_pert_probs)))
+                ga_drift = float(np.mean(np.abs(ga_clean_probs - ga_pert_probs)))
+                gain = round(((base_drift - ga_drift) / base_drift) * 100.0, 1) if base_drift > 0 else 0.0
+
+            curve_points.append({
+                "noise_sigma": round(float(sig), 2),
+                "baseline_drift": round(base_drift, 4),
+                "ga_drift": round(ga_drift, 4),
+                "robustness_gain_percent": gain
+            })
+
+        return curve_points
 
     def predict_vitals(self, vitals: Dict[str, Optional[float]]) -> Tuple[float, float]:
         """

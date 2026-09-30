@@ -111,3 +111,53 @@ def test_predict_single_vitals():
     assert 0.0 <= b_risk <= 1.0
     assert 0.0 <= ga_risk <= 1.0
     assert b_risk > 0.50
+
+
+def test_extended_metrics_and_calibration():
+    df = generate_synthetic_cohort(n_samples=70, random_seed=42)
+    pipeline = MLPipeline(random_seed=42)
+    pipeline.train_pipeline(df)
+
+    base_eval = pipeline.evaluate_model(is_ga=False, threshold=0.50)
+    assert "brier_score" in base_eval
+    assert "f1_score" in base_eval
+    assert "specificity" in base_eval
+    assert "accuracy" in base_eval
+    assert 0.0 <= base_eval["brier_score"] <= 1.0
+    assert 0.0 <= base_eval["f1_score"] <= 1.0
+    assert 0.0 <= base_eval["specificity"] <= 1.0
+    assert 0.0 <= base_eval["accuracy"] <= 1.0
+
+
+def test_robustness_curve_computation():
+    df = generate_synthetic_cohort(n_samples=70, random_seed=42)
+    pipeline = MLPipeline(random_seed=42)
+    pipeline.train_pipeline(df)
+
+    curve_pts = pipeline.get_robustness_curve()
+    assert isinstance(curve_pts, list)
+    assert len(curve_pts) >= 5
+    first_pt = curve_pts[0]
+    assert first_pt["noise_sigma"] == 0.0
+    assert "baseline_drift" in first_pt
+    assert "ga_drift" in first_pt
+    assert "robustness_gain_percent" in first_pt
+
+
+def test_map_canonical_naming_and_aliasing():
+    preprocessor = VitalPreprocessor(include_derived=True)
+    df = pd.DataFrame([{
+        "record_id": "MAP-1",
+        "heart_rate": 80.0,
+        "spo2": 99.0,
+        "systolic_bp": 120.0,
+        "diastolic_bp": 80.0,
+        "respiratory_rate": 18.0,
+        "temperature": 37.0,
+        "oxygen_saturation": 99.0,
+        "mean_arterial_pressure": 93.33
+    }])
+    preprocessor.fit(df)
+    transformed = preprocessor.transform(df)
+    assert transformed.shape == (1, len(ALL_DERIVED_FEATURES))
+    assert not np.isnan(transformed).any()

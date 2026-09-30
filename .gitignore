@@ -20,3 +20,4 @@ htmlcov/
 
 # Databases & local data
 backend/data/*.db
+*.zip

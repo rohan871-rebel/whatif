@@ -24,10 +24,10 @@ def create_simulator_router(app_state) -> APIRouter:
                         status_code=422,
                         detail=f"Invalid physiological input: {field} cannot be negative ({val})."
                     )
-                if field == "spo2" and (val < 0 or val > 100):
+                if field in ["spo2", "oxygen_saturation"] and (val < 0 or val > 100):
                     raise HTTPException(
                         status_code=422,
-                        detail=f"Invalid physiological input: SpO2 must be between 0 and 100% ({val})."
+                        detail=f"Invalid physiological input: {field} must be between 0 and 100% ({val})."
                     )
 
         # 2. Run simulation

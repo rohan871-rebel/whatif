@@ -42,6 +42,7 @@ class RuleConfig(BaseModel):
     rule_id: str
     field: str
     name: str
+    category: str = "PHYSIOLOGICAL_PLAUSIBILITY"  # PHYSIOLOGICAL_PLAUSIBILITY, TELEMETRY_FRESHNESS, RELATIONAL_INTEGRITY
     min_plausible: Optional[float] = None
     max_plausible: Optional[float] = None
     max_stale_minutes: Optional[int] = None
@@ -54,6 +55,7 @@ class DataQualityWarning(BaseModel):
     record_id: str
     field: str
     rule_id: str
+    category: Optional[str] = "PHYSIOLOGICAL_PLAUSIBILITY"
     severity: str
     message: str
     current_value: Optional[Any] = None
@@ -93,6 +95,9 @@ class WhatIfResponse(BaseModel):
     is_false_negative: bool = Field(False, description="True if perturbation induced a Silent Failure (critical risk masked below decision threshold)")
     is_false_positive: bool = Field(False, description="True if perturbation induced a Spurious Alarm (stable patient flagged critical)")
     false_negative_risk_delta: Optional[float] = Field(None, description="Quantified risk suppression delta if false negative occurs")
+    sensor_dropout_fields: List[str] = Field(default_factory=list, description="Explicit alias for dropped vital fields")
+    gaussian_noise_sigma: float = Field(0.0, description="Explicit Gaussian noise perturbation magnitude")
+    stale_telemetry_detected: bool = Field(False, description="True if telemetry buffer staleness exceeds research threshold")
     ghost_signal_detected: bool
     ghost_signal_type: Optional[str] = None  # None, "SPURIOUS_ALARM" (false positive), "SILENT_FAILURE" (false negative)
     ghost_signal_severity: str  # NONE, LOW, MEDIUM, HIGH
@@ -113,6 +118,10 @@ class ModelMetrics(BaseModel):
     false_negative_count: int
     critical_cases_count: int
     mean_absolute_score_change: float  # Perturbation vulnerability index
+    brier_score: Optional[float] = Field(None, description="Brier score calibration loss on held-out test records")
+    f1_score: Optional[float] = Field(None, description="F1 score at specified decision threshold")
+    specificity: Optional[float] = Field(None, description="Specificity / True Negative Rate at decision threshold")
+    accuracy: Optional[float] = Field(None, description="Overall classification accuracy at decision threshold")
     selected_features_count: int
     selected_feature_names: List[str]
     all_feature_names: List[str]
@@ -132,7 +141,25 @@ class ModelComparisonResponse(BaseModel):
     ga_model: ModelMetrics
     robustness_gain_percent: float
     decision_threshold: float
-    dataset_summary: Dict[str, int]
+    dataset_summary: Dict[str, Any]
+
+
+class RobustnessCurvePoint(BaseModel):
+    noise_sigma: float
+    baseline_drift: float
+    ga_drift: float
+    robustness_gain_percent: float
+
+
+class RobustnessCurveResponse(BaseModel):
+    curve_points: List[RobustnessCurvePoint]
+    test_samples: int
+    random_seed: int
+    evaluation_split: str = "Held-out test split (reproducible seed 42)"
+    disclaimer: str = (
+        "Evaluated across noise spectrum on identical held-out test cohort. "
+        "Demonstrates synthetic noise degradation curves; not clinical validation."
+    )
 
 
 class ExperimentRecord(BaseModel):
